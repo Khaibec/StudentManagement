@@ -77,6 +77,35 @@ Mở `http://localhost:4200/` trên trình duyệt. Frontend hiện được c�
 
 ## API endpoints
 
+## Xác thực API
+
+Trước khi gọi các API quản lý, tạo tài khoản hoặc đăng nhập để nhận JWT. Mật khẩu được băm bằng `PasswordHasher`, không được lưu dạng rõ.
+
+| Method | Endpoint | Mô tả |
+| --- | --- | --- |
+| POST | `/api/auth/register` | Đăng ký tài khoản mới và trả về access token |
+| POST | `/api/auth/login` | Đăng nhập và trả về access token |
+| GET | `/api/auth/me` | Lấy thông tin người dùng đang đăng nhập |
+
+Đăng ký (mật khẩu tối thiểu 8 ký tự):
+
+```json
+POST /api/auth/register
+{
+  "fullName": "Nguyen Van A",
+  "email": "nguyenvana@example.com",
+  "password": "MatKhau123!"
+}
+```
+
+Sau khi đăng ký hoặc đăng nhập, response chứa `accessToken`. Gửi token đó ở header khi gọi `/api/students`, `/api/classes`, `/api/courses` và `/api/enrollments`:
+
+```text
+Authorization: Bearer <accessToken>
+```
+
+Token mặc định hết hạn sau 60 phút. Khi deploy, đặt `Jwt__Key` bằng một secret ngẫu nhiên, đủ dài trong biến môi trường thay vì dùng khóa mẫu ở `appsettings.json`.
+
 Các nhóm tài nguyên `students`, `classes` và `courses` đều hỗ trợ:
 
 | Method | Endpoint | Mô tả |

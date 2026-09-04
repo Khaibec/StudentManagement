@@ -165,3 +165,6 @@ D:\cs-Projects\StudentManagement\StudentApi\obj\Debug\net10.0\refint\StudentApi.
 D:\cs-Projects\StudentManagement\StudentApi\obj\Debug\net10.0\StudentApi.pdb
 D:\cs-Projects\StudentManagement\StudentApi\obj\Debug\net10.0\StudentApi.genruntimeconfig.cache
 D:\cs-Projects\StudentManagement\StudentApi\obj\Debug\net10.0\ref\StudentApi.dll
+D:\cs-Projects\StudentManagement\StudentApi\obj\Debug\net10.0\StudentApi.sourcelink.json
+D:\cs-Projects\StudentManagement\StudentApi\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+D:\cs-Projects\StudentManagement\StudentApi\bin\Debug\net10.0\Microsoft.Bcl.Cryptography.dll

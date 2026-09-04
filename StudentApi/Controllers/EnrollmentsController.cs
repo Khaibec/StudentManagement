@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using StudentApi.DTOs;
 using StudentApi.Services;
 
 namespace StudentApi.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/enrollments")]
 public class EnrollmentsController : ControllerBase
 {

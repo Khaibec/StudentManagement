@@ -19,6 +19,8 @@ public class ApplicationDBContext : DbContext
 
     public DbSet<Enrollment> Enrollments { get; set; }
 
+    public DbSet<User> Users { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -42,5 +44,14 @@ public class ApplicationDBContext : DbContext
             .HasOne(e => e.Course)
             .WithMany(c => c.Enrollments)
             .HasForeignKey(e => e.CourseId);
+
+        builder.Entity<User>(entity =>
+        {
+            entity.HasIndex(u => u.Email).IsUnique();
+            entity.Property(u => u.Email).HasMaxLength(256);
+            entity.Property(u => u.FullName).HasMaxLength(100);
+            entity.Property(u => u.PasswordHash).HasMaxLength(512);
+            entity.Property(u => u.Role).HasMaxLength(50);
+        });
     }
 }
