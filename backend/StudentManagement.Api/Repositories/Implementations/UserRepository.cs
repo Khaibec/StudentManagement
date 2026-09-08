@@ -3,7 +3,7 @@ using StudentManagement.Api.Data;
 using StudentManagement.Api.Entities;
 using StudentManagement.Api.Repositories.Interfaces;
 
-namespace StudentManagement.Api.Repositories;
+namespace StudentManagement.Api.Repositories.Implementations;
 
 public class UserRepository : IUserRepository
 {
@@ -29,13 +29,10 @@ public class UserRepository : IUserRepository
         return await _context.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower());
     }
 
-    public async Task AddAsync(User user)
+    public async Task<User> CreateAsync(User user)
     {
         await _context.Users.AddAsync(user);
-    }
-
-    public async Task SaveChangesAsync()
-    {
         await _context.SaveChangesAsync();
+        return user;
     }
 }

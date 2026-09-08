@@ -4,16 +4,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StudentManagement.Api.Data;
-using StudentManagement.Api.Repositories;
 using StudentManagement.Api.Repositories.Interfaces;
-using StudentManagement.Api.Services;
+using StudentManagement.Api.Repositories.Implementations;
 using StudentManagement.Api.Services.Interfaces;
+using StudentManagement.Api.Services.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Đăng ký Repositories và Services (Dependency Injection)
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IAuthService, AuthService>();
 
 // 1. Cấu hình DbContext với SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -57,6 +53,11 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+
+// Đăng ký các tầng Repositories và Services vào DI Container
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // 4. Cấu hình Controllers
 builder.Services.AddControllers();

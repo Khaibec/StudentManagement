@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StudentManagement.Api.DTOs.Auth;
+using StudentManagement.Api.DTOs.Common;
 using StudentManagement.Api.Services.Interfaces;
 
 namespace StudentManagement.Api.Controllers;
@@ -18,83 +19,70 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Đăng nhập hệ thống (dùng tài khoản admin/Admin@123 hoặc user/User@123)
+    /// Đăng nhập hệ thống bằng username và password
     /// </summary>
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
+    public async Task<ActionResult<ApiResponse<AuthResponseDto>>> Login([FromBody] LoginRequestDto request)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         try
         {
-            var response = await _authService.LoginAsync(request);
-            return Ok(response);
+            var result = await _authService.LoginAsync(request);
+            return Ok(ApiResponse<AuthResponseDto>.Ok(result, "Đăng nhập thành công!"));
         }
-        catch (UnauthorizedAccessException ex)
+        catch (BadHttpRequestException ex)
         {
-            return Unauthorized(new { message = ex.Message });
+            return BadRequest(ApiResponse<AuthResponseDto>.Fail(ex.Message));
         }
     }
 
     /// <summary>
-    /// Đăng ký tài khoản người dùng mới (mặc định Role là User)
+    /// Đăng ký tài khoản người dùng mới (Role mặc định: User)
     /// </summary>
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
+    public async Task<ActionResult<ApiResponse<AuthResponseDto>>> Register([FromBody] RegisterRequestDto request)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         try
         {
-            var response = await _authService.RegisterAsync(request);
-            return CreatedAtAction(nameof(GetMe), new { }, response);
+            var result = await _authService.RegisterAsync(request);
+            return Ok(ApiResponse<AuthResponseDto>.Ok(result, "Đăng ký tài khoản thành công!"));
         }
-        catch (InvalidOperationException ex)
+        catch (BadHttpRequestException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(ApiResponse<AuthResponseDto>.Fail(ex.Message));
         }
     }
 
     /// <summary>
-    /// Lấy thông tin tài khoản hiện tại từ Token JWT (Yêu cầu đăng nhập)
+    /// Lấy thông tin tài khoản hiện tại từ JWT Token (Yêu cầu đăng nhập)
     /// </summary>
     [Authorize]
     [HttpGet("me")]
-    public async Task<IActionResult> GetMe()
+    public async Task<ActionResult<ApiResponse<UserProfileDto>>> GetCurrentUser()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
         {
-            return Unauthorized(new { message = "Không xác định được danh tính người dùng." });
+            return Unauthorized(ApiResponse<UserProfileDto>.Fail("Token không hợp lệ hoặc đã hết hạn."));
         }
 
-        var user = await _authService.GetCurrentUserAsync(userId);
-        if (user == null)
+        try
         {
-            return NotFound(new { message = "Không tìm thấy người dùng." });
+            var profile = await _authService.GetUserProfileAsync(userId);
+            return Ok(ApiResponse<UserProfileDto>.Ok(profile, "Lấy thông tin tài khoản thành công."));
         }
-
-        return Ok(user);
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<UserProfileDto>.Fail(ex.Message));
+        }
     }
 
     /// <summary>
-    /// Endpoint kiểm tra phân quyền (Chỉ tài khoản có Role = Admin mới được truy cập)
+    /// Endpoint kiểm thử phân quyền: Chỉ dành cho tài khoản có Role = Admin
     /// </summary>
     [Authorize(Roles = "Admin")]
     [HttpGet("admin-only-test")]
     public IActionResult AdminOnlyTest()
     {
-        var username = User.Identity?.Name ?? "Admin";
-        return Ok(new
-        {
-            message = $"Xin chào {username}! Bạn có quyền Quản trị viên (Admin) để truy cập tính năng này.",
-            timestamp = DateTime.UtcNow
-        });
+        return Ok(ApiResponse<string>.Ok("Xin chào Admin! Bạn có toàn quyền quản trị hệ thống."));
     }
 }
