@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { StudentService } from '../../services/student.service';
@@ -57,7 +57,8 @@ export class StudentsComponent implements OnInit {
     private studentService: StudentService,
     private classService: ClassService,
     public authService: AuthService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
   ) {
     this.studentForm = this.fb.group({
       studentCode: ['', [Validators.required, Validators.maxLength(20)]],
@@ -95,10 +96,12 @@ export class StudentsComponent implements OnInit {
           this.pagedResult = res.data;
           this.students = res.data.items;
         }
+        this.cdr.detectChanges();
       },
       error: () => {
         this.isLoading = false;
         this.errorMessage = 'Không thể tải danh sách học sinh.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -214,10 +217,12 @@ export class StudentsComponent implements OnInit {
         if (res.success) {
           this.selectedStudentDetail = res.data;
         }
+        this.cdr.detectChanges();
       },
       error: () => {
         this.isLoadingDetail = false;
         this.errorMessage = 'Không thể tải chi tiết học sinh.';
+        this.cdr.detectChanges();
       }
     });
   }

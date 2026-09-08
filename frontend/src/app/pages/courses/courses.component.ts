@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+﻿import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CourseService } from '../../services/course.service';
@@ -29,7 +29,8 @@ export class CoursesComponent implements OnInit {
   constructor(
     private courseService: CourseService,
     public authService: AuthService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
   ) {
     this.courseForm = this.fb.group({
       code: ['', [Validators.required, Validators.maxLength(20)]],
@@ -51,10 +52,12 @@ export class CoursesComponent implements OnInit {
         if (res.success) {
           this.courses = res.data;
         }
+        this.cdr.detectChanges();
       },
       error: () => {
         this.isLoading = false;
         this.errorMessage = 'Không thể tải danh sách môn học.';
+        this.cdr.detectChanges();
       }
     });
   }

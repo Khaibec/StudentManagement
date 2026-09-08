@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EnrollmentService } from '../../services/enrollment.service';
@@ -46,7 +46,8 @@ export class EnrollmentsComponent implements OnInit {
     private studentService: StudentService,
     private courseService: CourseService,
     public authService: AuthService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
   ) {
     this.enrollForm = this.fb.group({
       studentId: [null, [Validators.required]],
@@ -85,10 +86,12 @@ export class EnrollmentsComponent implements OnInit {
         if (res.success) {
           this.enrollments = res.data;
         }
+        this.cdr.detectChanges();
       },
       error: () => {
         this.isLoading = false;
         this.errorMessage = 'Không thể tải danh sách đăng ký.';
+        this.cdr.detectChanges();
       }
     });
   }

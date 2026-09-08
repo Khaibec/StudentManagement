@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+﻿import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ClassService } from '../../services/class.service';
@@ -31,7 +31,8 @@ export class ClassesComponent implements OnInit {
   constructor(
     private classService: ClassService,
     public authService: AuthService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
   ) {
     this.classForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(50)]],
@@ -51,10 +52,12 @@ export class ClassesComponent implements OnInit {
         if (res.success) {
           this.classes = res.data;
         }
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.isLoading = false;
         this.errorMessage = 'Không thể tải danh sách lớp học.';
+        this.cdr.detectChanges();
       }
     });
   }

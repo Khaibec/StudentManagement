@@ -46,7 +46,8 @@
         </div>
 
         <div class="col-md-2 text-md-end align-self-end">
-          <button class="btn btn-outline-secondary w-100" (click)="filterStudentId = undefined; filterCourseId = undefined; onFilterChange()">
+          <button class="btn btn-outline-secondary w-100"
+            (click)="filterStudentId = undefined; filterCourseId = undefined; onFilterChange()">
             <i class="bi bi-arrow-counterclockwise me-1"></i> Đặt lại
           </button>
         </div>
@@ -62,11 +63,12 @@
           <thead class="table-light">
             <tr>
               <th scope="col" class="ps-4">Học Sinh</th>
-              <th scope="col">Môn Học</th>
-              <th scope="col" class="text-center">Số TC</th>
-              <th scope="col">Ngày Đăng Ký</th>
-              <th scope="col" class="text-center">Điểm Số</th>
-              <th *ngIf="authService.isAdmin()" scope="col" class="text-end pe-4" style="width: 160px;">Thao Tác</th>
+              <th scope="col" style="max-width: 250px;">Môn Học</th>
+              <th scope="col" class="text-center" style="width: 80px;">Số TC</th>
+              <th scope="col" class="text-nowrap" style="width: 120px;">Ngày ĐK</th>
+              <th scope="col" class="text-center" style="width: 110px;">Điểm Số</th>
+              <th *ngIf="authService.isAdmin()" scope="col" class="text-end pe-4 text-nowrap" style="min-width: 175px;">
+                Thao Tác</th>
             </tr>
           </thead>
           <tbody>
@@ -88,24 +90,28 @@
                 <span class="badge bg-secondary font-monospace me-2">{{ e.studentCode }}</span>
                 <span class="fw-semibold text-dark">{{ e.studentName }}</span>
               </td>
-              <td>
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace me-2">{{ e.courseCode }}</span>
-                <span>{{ e.courseTitle }}</span>
+              <td style="max-width: 250px;">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace me-1">{{
+                  e.courseCode }}</span>
+                <span class="text-truncate d-inline-block align-middle" [title]="e.courseTitle"
+                  style="max-width: calc(100% - 75px);">{{ e.courseTitle }}</span>
               </td>
               <td class="text-center">
                 <span class="badge bg-light text-dark border">{{ e.credits }} TC</span>
               </td>
-              <td class="text-muted">{{ e.enrollmentDate | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td class="text-muted text-nowrap small">{{ e.enrollmentDate | date:'dd/MM/yyyy' }}</td>
               <td class="text-center">
-                <span *ngIf="e.grade !== null && e.grade !== undefined" class="badge fs-6" [ngClass]="e.grade >= 5.0 ? 'bg-success' : 'bg-danger'">
+                <span *ngIf="e.grade !== null && e.grade !== undefined" class="badge fs-6"
+                  [ngClass]="e.grade >= 5.0 ? 'bg-success' : 'bg-danger'">
                   {{ e.grade | number:'1.1-1' }}
                 </span>
                 <span *ngIf="e.grade === null || e.grade === undefined" class="badge bg-light text-muted border">
                   Chưa chấm
                 </span>
               </td>
-              <td *ngIf="authService.isAdmin()" class="text-end pe-4">
-                <button class="btn btn-outline-success btn-sm me-2" (click)="openGradeModal(e)" title="Nhập / Cập nhật điểm">
+              <td *ngIf="authService.isAdmin()" class="text-end pe-4 text-nowrap">
+                <button class="btn btn-outline-success btn-sm me-2" (click)="openGradeModal(e)"
+                  title="Nhập / Cập nhật điểm">
                   <i class="bi bi-award"></i> Chấm điểm
                 </button>
                 <button class="btn btn-outline-danger btn-sm" (click)="openCancelModal(e)" title="Hủy đăng ký">
@@ -133,13 +139,9 @@
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label fw-semibold">Chọn Học Sinh <span class="text-danger">*</span></label>
-            <select
-              class="form-select"
-              formControlName="studentId"
-              [ngClass]="{
+            <select class="form-select" formControlName="studentId" [ngClass]="{
                 'is-invalid': enrollForm.get('studentId')?.touched && enrollForm.get('studentId')?.invalid
-              }"
-            >
+              }">
               <option [ngValue]="null">-- Chọn học sinh --</option>
               <option *ngFor="let s of students" [ngValue]="s.id">
                 {{ s.studentCode }} - {{ s.fullName }}
@@ -150,13 +152,9 @@
 
           <div class="mb-3">
             <label class="form-label fw-semibold">Chọn Môn Học <span class="text-danger">*</span></label>
-            <select
-              class="form-select"
-              formControlName="courseId"
-              [ngClass]="{
+            <select class="form-select" formControlName="courseId" [ngClass]="{
                 'is-invalid': enrollForm.get('courseId')?.touched && enrollForm.get('courseId')?.invalid
-              }"
-            >
+              }">
               <option [ngValue]="null">-- Chọn môn học --</option>
               <option *ngFor="let c of courses" [ngValue]="c.id">
                 {{ c.code }} - {{ c.title }} ({{ c.credits }} TC)
@@ -188,24 +186,17 @@
       <form [formGroup]="gradeForm" (ngSubmit)="onSubmitGrade()">
         <div class="modal-body">
           <div class="p-3 bg-light rounded-3 mb-3">
-            <div><strong>Học sinh:</strong> {{ selectedEnrollment?.studentName }} ({{ selectedEnrollment?.studentCode }})</div>
+            <div><strong>Học sinh:</strong> {{ selectedEnrollment?.studentName }} ({{ selectedEnrollment?.studentCode
+              }})</div>
             <div class="mt-1"><strong>Môn học:</strong> {{ selectedEnrollment?.courseTitle }}</div>
           </div>
 
           <div class="mb-3">
             <label class="form-label fw-semibold">Điểm Tổng Kết (Thang điểm 10)</label>
-            <input
-              type="number"
-              class="form-control"
-              step="0.1"
-              min="0"
-              max="10"
-              placeholder="Nhập điểm từ 0.0 đến 10.0"
-              formControlName="grade"
-              [ngClass]="{
+            <input type="number" class="form-control" step="0.1" min="0" max="10"
+              placeholder="Nhập điểm từ 0.0 đến 10.0" formControlName="grade" [ngClass]="{
                 'is-invalid': gradeForm.get('grade')?.touched && gradeForm.get('grade')?.invalid
-              }"
-            />
+              }" />
             <div class="invalid-feedback">Điểm số phải nằm trong khoảng từ 0 đến 10.</div>
           </div>
         </div>
@@ -230,7 +221,8 @@
         <button type="button" class="btn-close" (click)="closeCancelModal()"></button>
       </div>
       <div class="modal-body">
-        Bạn có chắc chắn muốn hủy đăng ký môn <strong>{{ enrollmentToCancel?.courseTitle }}</strong> của học sinh <strong>{{ enrollmentToCancel?.studentName }}</strong> không?
+        Bạn có chắc chắn muốn hủy đăng ký môn <strong>{{ enrollmentToCancel?.courseTitle }}</strong> của học sinh
+        <strong>{{ enrollmentToCancel?.studentName }}</strong> không?
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeCancelModal()">Hủy</button>
