@@ -1,0 +1,182 @@
+﻿<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold mb-1"><i class="bi bi-journal-bookmark me-2 text-primary"></i>Quản Lý Môn Học</h3>
+      <p class="text-muted mb-0 small">Danh sách các môn học & khóa học trong chương trình đào tạo</p>
+    </div>
+    <button *ngIf="authService.isAdmin()" class="btn btn-primary" (click)="openCreateModal()">
+      <i class="bi bi-plus-lg me-1"></i> Thêm Môn Học
+    </button>
+  </div>
+
+  <!-- Alerts -->
+  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="bi bi-check-circle-fill me-2"></i>{{ successMessage }}
+    <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+  </div>
+
+  <!-- Table Card -->
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col" class="ps-4" style="width: 120px;">Mã Môn</th>
+              <th scope="col">Tên Môn Học</th>
+              <th scope="col" class="text-center" style="width: 100px;">Số Tín Chỉ</th>
+              <th scope="col">Mô Tả</th>
+              <th scope="col" class="text-center" style="width: 120px;">Đã Đăng Ký</th>
+              <th *ngIf="authService.isAdmin()" scope="col" class="text-end pe-4" style="width: 150px;">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="isLoading">
+              <td [attr.colspan]="authService.isAdmin() ? 6 : 5" class="text-center py-4 text-muted">
+                <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                Đang tải dữ liệu...
+              </td>
+            </tr>
+
+            <tr *ngIf="!isLoading && courses.length === 0">
+              <td [attr.colspan]="authService.isAdmin() ? 6 : 5" class="text-center py-4 text-muted">
+                Chưa có môn học nào trong hệ thống.
+              </td>
+            </tr>
+
+            <tr *ngFor="let c of courses">
+              <td class="ps-4">
+                <span class="badge bg-secondary font-monospace fs-6">{{ c.code }}</span>
+              </td>
+              <td class="fw-semibold text-dark">{{ c.title }}</td>
+              <td class="text-center">
+                <span class="badge bg-light text-dark border">{{ c.credits }} TC</span>
+              </td>
+              <td class="text-muted">{{ c.description || '(Không có mô tả)' }}</td>
+              <td class="text-center">
+                <span class="badge bg-info text-dark">{{ c.enrolledCount }} học sinh</span>
+              </td>
+              <td *ngIf="authService.isAdmin()" class="text-end pe-4">
+                <button class="btn btn-outline-primary btn-sm me-2" (click)="openEditModal(c)" title="Chỉnh sửa">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-outline-danger btn-sm" (click)="openDeleteModal(c)" title="Xóa">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Thêm / Sửa Môn Học -->
+<div *ngIf="showModal" class="modal-backdrop fade show"></div>
+<div *ngIf="showModal" class="modal fade show d-block" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">
+          {{ isEditMode ? 'Chỉnh Sửa Môn Học' : 'Thêm Mới Môn Học' }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <form [formGroup]="courseForm" (ngSubmit)="onSubmit()">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Mã Môn Học <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Ví dụ: MATH101"
+                formControlName="code"
+                [ngClass]="{
+                  'is-invalid': courseForm.get('code')?.touched && courseForm.get('code')?.invalid
+                }"
+              />
+              <div class="invalid-feedback">Mã môn không được để trống (tối đa 20 ký tự).</div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Số Tín Chỉ <span class="text-danger">*</span></label>
+              <input
+                type="number"
+                class="form-control"
+                min="1"
+                max="10"
+                formControlName="credits"
+                [ngClass]="{
+                  'is-invalid': courseForm.get('credits')?.touched && courseForm.get('credits')?.invalid
+                }"
+              />
+              <div class="invalid-feedback">Tín chỉ từ 1 đến 10.</div>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold">Tên Môn Học <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Ví dụ: Lập trình C# Cơ Bản"
+                formControlName="title"
+                [ngClass]="{
+                  'is-invalid': courseForm.get('title')?.touched && courseForm.get('title')?.invalid
+                }"
+              />
+              <div class="invalid-feedback">Tên môn không được để trống (tối đa 150 ký tự).</div>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold">Mô Tả</label>
+              <textarea
+                class="form-control"
+                rows="3"
+                placeholder="Mô tả nội dung môn học..."
+                formControlName="description"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary">
+            {{ isEditMode ? 'Lưu Thay Đổi' : 'Thêm Mới' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Xác Nhận Xóa -->
+<div *ngIf="showDeleteModal" class="modal-backdrop fade show"></div>
+<div *ngIf="showDeleteModal" class="modal fade show d-block" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold text-danger">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Xác Nhận Xóa
+        </h5>
+        <button type="button" class="btn-close" (click)="closeDeleteModal()"></button>
+      </div>
+      <div class="modal-body">
+        Bạn có chắc chắn muốn xóa môn học <strong>{{ courseToDelete?.title }} ({{ courseToDelete?.code }})</strong> không?
+        <div class="text-muted small mt-2">
+          Lưu ý: Mọi đăng ký liên quan đến môn học này cũng sẽ bị xóa.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDeleteModal()">Hủy</button>
+        <button type="danger" class="btn btn-danger" (click)="confirmDelete()">Đồng Ý Xóa</button>
+      </div>
+    </div>
+  </div>
+</div>

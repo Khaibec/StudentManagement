@@ -1,0 +1,241 @@
+﻿<div class="container py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold mb-1"><i class="bi bi-pencil-square me-2 text-primary"></i>Quản Lý Đăng Ký Môn Học</h3>
+      <p class="text-muted mb-0 small">Đăng ký môn học, theo dõi tiến độ và quản lý điểm số</p>
+    </div>
+    <button *ngIf="authService.isAdmin()" class="btn btn-primary" (click)="openEnrollModal()">
+      <i class="bi bi-plus-lg me-1"></i> Đăng Ký Môn Mới
+    </button>
+  </div>
+
+  <!-- Alerts -->
+  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="bi bi-check-circle-fill me-2"></i>{{ successMessage }}
+    <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-3">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-5">
+          <label class="form-label small fw-semibold mb-1">Lọc theo học sinh:</label>
+          <select class="form-select" [(ngModel)]="filterStudentId" (change)="onFilterChange()">
+            <option [ngValue]="undefined">-- Tất cả học sinh --</option>
+            <option *ngFor="let s of students" [ngValue]="s.id">
+              {{ s.studentCode }} - {{ s.fullName }}
+            </option>
+          </select>
+        </div>
+
+        <div class="col-md-5">
+          <label class="form-label small fw-semibold mb-1">Lọc theo môn học:</label>
+          <select class="form-select" [(ngModel)]="filterCourseId" (change)="onFilterChange()">
+            <option [ngValue]="undefined">-- Tất cả môn học --</option>
+            <option *ngFor="let c of courses" [ngValue]="c.id">
+              {{ c.code }} - {{ c.title }}
+            </option>
+          </select>
+        </div>
+
+        <div class="col-md-2 text-md-end align-self-end">
+          <button class="btn btn-outline-secondary w-100" (click)="filterStudentId = undefined; filterCourseId = undefined; onFilterChange()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i> Đặt lại
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col" class="ps-4">Học Sinh</th>
+              <th scope="col">Môn Học</th>
+              <th scope="col" class="text-center">Số TC</th>
+              <th scope="col">Ngày Đăng Ký</th>
+              <th scope="col" class="text-center">Điểm Số</th>
+              <th *ngIf="authService.isAdmin()" scope="col" class="text-end pe-4" style="width: 160px;">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="isLoading">
+              <td [attr.colspan]="authService.isAdmin() ? 6 : 5" class="text-center py-5 text-muted">
+                <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                Đang tải danh sách đăng ký...
+              </td>
+            </tr>
+
+            <tr *ngIf="!isLoading && enrollments.length === 0">
+              <td [attr.colspan]="authService.isAdmin() ? 6 : 5" class="text-center py-5 text-muted">
+                Chưa có bản ghi đăng ký nào phù hợp.
+              </td>
+            </tr>
+
+            <tr *ngFor="let e of enrollments">
+              <td class="ps-4">
+                <span class="badge bg-secondary font-monospace me-2">{{ e.studentCode }}</span>
+                <span class="fw-semibold text-dark">{{ e.studentName }}</span>
+              </td>
+              <td>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace me-2">{{ e.courseCode }}</span>
+                <span>{{ e.courseTitle }}</span>
+              </td>
+              <td class="text-center">
+                <span class="badge bg-light text-dark border">{{ e.credits }} TC</span>
+              </td>
+              <td class="text-muted">{{ e.enrollmentDate | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td class="text-center">
+                <span *ngIf="e.grade !== null && e.grade !== undefined" class="badge fs-6" [ngClass]="e.grade >= 5.0 ? 'bg-success' : 'bg-danger'">
+                  {{ e.grade | number:'1.1-1' }}
+                </span>
+                <span *ngIf="e.grade === null || e.grade === undefined" class="badge bg-light text-muted border">
+                  Chưa chấm
+                </span>
+              </td>
+              <td *ngIf="authService.isAdmin()" class="text-end pe-4">
+                <button class="btn btn-outline-success btn-sm me-2" (click)="openGradeModal(e)" title="Nhập / Cập nhật điểm">
+                  <i class="bi bi-award"></i> Chấm điểm
+                </button>
+                <button class="btn btn-outline-danger btn-sm" (click)="openCancelModal(e)" title="Hủy đăng ký">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Đăng Ký Môn Học -->
+<div *ngIf="showEnrollModal" class="modal-backdrop fade show"></div>
+<div *ngIf="showEnrollModal" class="modal fade show d-block" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Đăng Ký Môn Học Cho Học Sinh</h5>
+        <button type="button" class="btn-close" (click)="closeEnrollModal()"></button>
+      </div>
+      <form [formGroup]="enrollForm" (ngSubmit)="onSubmitEnroll()">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Chọn Học Sinh <span class="text-danger">*</span></label>
+            <select
+              class="form-select"
+              formControlName="studentId"
+              [ngClass]="{
+                'is-invalid': enrollForm.get('studentId')?.touched && enrollForm.get('studentId')?.invalid
+              }"
+            >
+              <option [ngValue]="null">-- Chọn học sinh --</option>
+              <option *ngFor="let s of students" [ngValue]="s.id">
+                {{ s.studentCode }} - {{ s.fullName }}
+              </option>
+            </select>
+            <div class="invalid-feedback">Vui lòng chọn học sinh.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Chọn Môn Học <span class="text-danger">*</span></label>
+            <select
+              class="form-select"
+              formControlName="courseId"
+              [ngClass]="{
+                'is-invalid': enrollForm.get('courseId')?.touched && enrollForm.get('courseId')?.invalid
+              }"
+            >
+              <option [ngValue]="null">-- Chọn môn học --</option>
+              <option *ngFor="let c of courses" [ngValue]="c.id">
+                {{ c.code }} - {{ c.title }} ({{ c.credits }} TC)
+              </option>
+            </select>
+            <div class="invalid-feedback">Vui lòng chọn môn học.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeEnrollModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary">Xác Nhận Đăng Ký</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nhập / Cập Nhật Điểm -->
+<div *ngIf="showGradeModal" class="modal-backdrop fade show"></div>
+<div *ngIf="showGradeModal" class="modal fade show d-block" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold text-success">
+          <i class="bi bi-award me-2"></i>Nhập / Cập Nhật Điểm Số
+        </h5>
+        <button type="button" class="btn-close" (click)="closeGradeModal()"></button>
+      </div>
+      <form [formGroup]="gradeForm" (ngSubmit)="onSubmitGrade()">
+        <div class="modal-body">
+          <div class="p-3 bg-light rounded-3 mb-3">
+            <div><strong>Học sinh:</strong> {{ selectedEnrollment?.studentName }} ({{ selectedEnrollment?.studentCode }})</div>
+            <div class="mt-1"><strong>Môn học:</strong> {{ selectedEnrollment?.courseTitle }}</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Điểm Tổng Kết (Thang điểm 10)</label>
+            <input
+              type="number"
+              class="form-control"
+              step="0.1"
+              min="0"
+              max="10"
+              placeholder="Nhập điểm từ 0.0 đến 10.0"
+              formControlName="grade"
+              [ngClass]="{
+                'is-invalid': gradeForm.get('grade')?.touched && gradeForm.get('grade')?.invalid
+              }"
+            />
+            <div class="invalid-feedback">Điểm số phải nằm trong khoảng từ 0 đến 10.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeGradeModal()">Hủy</button>
+          <button type="submit" class="btn btn-success">Lưu Điểm</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Xác Nhận Hủy Đăng Ký -->
+<div *ngIf="showCancelModal" class="modal-backdrop fade show"></div>
+<div *ngIf="showCancelModal" class="modal fade show d-block" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold text-danger">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Xác Nhận Hủy Đăng Ký
+        </h5>
+        <button type="button" class="btn-close" (click)="closeCancelModal()"></button>
+      </div>
+      <div class="modal-body">
+        Bạn có chắc chắn muốn hủy đăng ký môn <strong>{{ enrollmentToCancel?.courseTitle }}</strong> của học sinh <strong>{{ enrollmentToCancel?.studentName }}</strong> không?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeCancelModal()">Hủy</button>
+        <button type="button" class="btn btn-danger" (click)="confirmCancel()">Đồng Ý Hủy</button>
+      </div>
+    </div>
+  </div>
+</div>

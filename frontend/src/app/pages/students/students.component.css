@@ -1,0 +1,10 @@
+﻿.cursor-pointer {
+  cursor: pointer;
+  user-select: none;
+}
+.cursor-pointer:hover {
+  background-color: #e2e8f0;
+}
+.table td, .table th {
+  padding: 0.85rem 0.75rem;
+}

@@ -1,0 +1,426 @@
+﻿<div class="container py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold mb-1"><i class="bi bi-people me-2 text-primary"></i>Quản Lý Học Sinh</h3>
+      <p class="text-muted mb-0 small">Hồ sơ thông tin học sinh, lớp học và kết quả học tập</p>
+    </div>
+    <button *ngIf="authService.isAdmin()" class="btn btn-primary" (click)="openCreateModal()">
+      <i class="bi bi-person-plus me-1"></i> Thêm Học Sinh
+    </button>
+  </div>
+
+  <!-- Alerts -->
+  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="bi bi-check-circle-fill me-2"></i>{{ successMessage }}
+    <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+  </div>
+
+  <!-- Filter & Search Bar -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-3">
+      <div class="row g-2 align-items-center">
+        <!-- Search Input -->
+        <div class="col-md-4">
+          <div class="input-group">
+            <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+            <input
+              type="text"
+              class="form-control border-start-0"
+              placeholder="Tìm theo tên, mã SV, email..."
+              [(ngModel)]="query.searchTerm"
+              (keyup.enter)="onSearch()"
+            />
+            <button class="btn btn-primary" (click)="onSearch()">Tìm</button>
+          </div>
+        </div>
+
+        <!-- Filter by Class -->
+        <div class="col-md-3 col-sm-6">
+          <select class="form-select" [(ngModel)]="query.classRoomId" (change)="onFilterChange()">
+            <option [ngValue]="undefined">-- Tất cả lớp học --</option>
+            <option *ngFor="let c of classes" [ngValue]="c.id">{{ c.name }}</option>
+          </select>
+        </div>
+
+        <!-- Filter by Gender -->
+        <div class="col-md-3 col-sm-6">
+          <select class="form-select" [(ngModel)]="query.gender" (change)="onFilterChange()">
+            <option value="">-- Tất cả giới tính --</option>
+            <option value="Nam">Nam</option>
+            <option value="Nữ">Nữ</option>
+          </select>
+        </div>
+
+        <!-- Page Size -->
+        <div class="col-md-2 text-md-end">
+          <div class="d-inline-flex align-items-center gap-1">
+            <span class="small text-muted">Hiển thị:</span>
+            <select
+              class="form-select form-select-sm w-auto"
+              [ngModel]="query.pageSize"
+              (ngModelChange)="changePageSize($event)"
+            >
+              <option [ngValue]="5">5</option>
+              <option [ngValue]="10">10</option>
+              <option [ngValue]="20">20</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col" class="ps-4 cursor-pointer" (click)="onSortChange('StudentCode')">
+                Mã SV
+                <i class="bi ms-1" [ngClass]="query.sortBy === 'StudentCode' ? (query.sortOrder === 'asc' ? 'bi-sort-alpha-down text-primary' : 'bi-sort-alpha-down-alt text-primary') : 'bi-arrow-down-up text-muted'"></i>
+              </th>
+              <th scope="col" class="cursor-pointer" (click)="onSortChange('FullName')">
+                Họ và Tên
+                <i class="bi ms-1" [ngClass]="query.sortBy === 'FullName' ? (query.sortOrder === 'asc' ? 'bi-sort-alpha-down text-primary' : 'bi-sort-alpha-down-alt text-primary') : 'bi-arrow-down-up text-muted'"></i>
+              </th>
+              <th scope="col" class="text-center">Giới Tính</th>
+              <th scope="col" class="cursor-pointer" (click)="onSortChange('DateOfBirth')">
+                Ngày Sinh
+                <i class="bi ms-1" [ngClass]="query.sortBy === 'DateOfBirth' ? (query.sortOrder === 'asc' ? 'bi-sort-numeric-down text-primary' : 'bi-sort-numeric-down-alt text-primary') : 'bi-arrow-down-up text-muted'"></i>
+              </th>
+              <th scope="col">Lớp</th>
+              <th scope="col">Liên Hệ</th>
+              <th scope="col" class="text-center">Môn Đã Học</th>
+              <th scope="col" class="text-end pe-4" style="width: 180px;">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="isLoading">
+              <td colspan="8" class="text-center py-5 text-muted">
+                <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                Đang tải dữ liệu học sinh...
+              </td>
+            </tr>
+
+            <tr *ngIf="!isLoading && students.length === 0">
+              <td colspan="8" class="text-center py-5 text-muted">
+                Không tìm thấy học sinh nào phù hợp.
+              </td>
+            </tr>
+
+            <tr *ngFor="let s of students">
+              <td class="ps-4">
+                <span class="badge bg-secondary font-monospace">{{ s.studentCode }}</span>
+              </td>
+              <td class="fw-semibold text-dark">{{ s.fullName }}</td>
+              <td class="text-center">
+                <span
+                  class="badge"
+                  [ngClass]="s.gender === 'Nam' ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'"
+                >
+                  {{ s.gender }}
+                </span>
+              </td>
+              <td class="text-muted">{{ s.dateOfBirth | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <span *ngIf="s.classRoomName" class="badge bg-info text-dark">
+                  {{ s.classRoomName }}
+                </span>
+                <span *ngIf="!s.classRoomName" class="text-muted small">Chưa xếp lớp</span>
+              </td>
+              <td class="small text-muted">
+                <div *ngIf="s.email"><i class="bi bi-envelope me-1"></i>{{ s.email }}</div>
+                <div *ngIf="s.phoneNumber"><i class="bi bi-telephone me-1"></i>{{ s.phoneNumber }}</div>
+              </td>
+              <td class="text-center">
+                <span class="badge bg-light text-dark border">
+                  {{ s.enrolledCoursesCount }} môn
+                </span>
+              </td>
+              <td class="text-end pe-4">
+                <!-- Nút xem chi tiết (Mọi role đều xem được) -->
+                <button class="btn btn-outline-info btn-sm me-2" (click)="viewDetails(s)" title="Xem chi tiết & điểm">
+                  <i class="bi bi-eye"></i>
+                </button>
+                <!-- Nút sửa/xóa chỉ dành cho Admin -->
+                <ng-container *ngIf="authService.isAdmin()">
+                  <button class="btn btn-outline-primary btn-sm me-2" (click)="openEditModal(s)" title="Chỉnh sửa">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button class="btn btn-outline-danger btn-sm" (click)="openDeleteModal(s)" title="Xóa">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </ng-container>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div class="d-flex justify-content-between align-items-center p-3 border-top" *ngIf="pagedResult">
+        <div class="small text-muted">
+          Hiển thị <strong>{{ students.length }}</strong> trên tổng số <strong>{{ pagedResult.totalCount }}</strong> học sinh (Trang {{ pagedResult.pageNumber }} / {{ pagedResult.totalPages }})
+        </div>
+
+        <nav *ngIf="pagedResult.totalPages > 1">
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" [class.disabled]="!pagedResult.hasPreviousPage">
+              <button class="page-link" (click)="changePage(1)" title="Trang đầu">
+                <i class="bi bi-chevron-double-left"></i>
+              </button>
+            </li>
+            <li class="page-item" [class.disabled]="!pagedResult.hasPreviousPage">
+              <button class="page-link" (click)="changePage(query.pageNumber - 1)">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </li>
+
+            <li
+              class="page-item"
+              *ngFor="let p of [].constructor(pagedResult.totalPages); let i = index"
+              [class.active]="i + 1 === query.pageNumber"
+            >
+              <button class="page-link" (click)="changePage(i + 1)">{{ i + 1 }}</button>
+            </li>
+
+            <li class="page-item" [class.disabled]="!pagedResult.hasNextPage">
+              <button class="page-link" (click)="changePage(query.pageNumber + 1)">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </li>
+            <li class="page-item" [class.disabled]="!pagedResult.hasNextPage">
+              <button class="page-link" (click)="changePage(pagedResult.totalPages)" title="Trang cuối">
+                <i class="bi bi-chevron-double-right"></i>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Thêm / Sửa Học Sinh -->
+<div *ngIf="showModal" class="modal-backdrop fade show"></div>
+<div *ngIf="showModal" class="modal fade show d-block" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">
+          {{ isEditMode ? 'Chỉnh Sửa Thông Tin Học Sinh' : 'Thêm Mới Học Sinh' }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <form [formGroup]="studentForm" (ngSubmit)="onSubmit()">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Mã Học Sinh <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Ví dụ: SV006"
+                formControlName="studentCode"
+                [ngClass]="{
+                  'is-invalid': studentForm.get('studentCode')?.touched && studentForm.get('studentCode')?.invalid
+                }"
+              />
+              <div class="invalid-feedback">Mã học sinh là bắt buộc (tối đa 20 ký tự).</div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Họ và Tên <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Ví dụ: Nguyễn Văn Hoàng"
+                formControlName="fullName"
+                [ngClass]="{
+                  'is-invalid': studentForm.get('fullName')?.touched && studentForm.get('fullName')?.invalid
+                }"
+              />
+              <div class="invalid-feedback">Họ tên không được để trống.</div>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Ngày Sinh <span class="text-danger">*</span></label>
+              <input
+                type="date"
+                class="form-control"
+                formControlName="dateOfBirth"
+                [ngClass]="{
+                  'is-invalid': studentForm.get('dateOfBirth')?.touched && studentForm.get('dateOfBirth')?.invalid
+                }"
+              />
+              <div class="invalid-feedback">Ngày sinh là bắt buộc.</div>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Giới Tính <span class="text-danger">*</span></label>
+              <select class="form-select" formControlName="gender">
+                <option value="Nam">Nam</option>
+                <option value="Nữ">Nữ</option>
+                <option value="Khác">Khác</option>
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Lớp Học</label>
+              <select class="form-select" formControlName="classRoomId">
+                <option [ngValue]="null">-- Chưa xếp lớp --</option>
+                <option *ngFor="let c of classes" [ngValue]="c.id">{{ c.name }}</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Email</label>
+              <input
+                type="email"
+                class="form-control"
+                placeholder="email@example.com"
+                formControlName="email"
+                [ngClass]="{
+                  'is-invalid': studentForm.get('email')?.touched && studentForm.get('email')?.invalid
+                }"
+              />
+              <div class="invalid-feedback">Email không đúng định dạng.</div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Số Điện Thoại</label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="0901234567"
+                formControlName="phoneNumber"
+              />
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold">Địa Chỉ</label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Nhập địa chỉ thường trú..."
+                formControlName="address"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary">
+            {{ isEditMode ? 'Lưu Thay Đổi' : 'Thêm Mới' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Xem Chi Tiết Học Sinh & Điểm Số -->
+<div *ngIf="showDetailModal" class="modal-backdrop fade show"></div>
+<div *ngIf="showDetailModal" class="modal fade show d-block" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold text-primary">
+          <i class="bi bi-person-badge me-2"></i>Chi Tiết Học Sinh & Kết Quả Học Tập
+        </h5>
+        <button type="button" class="btn-close" (click)="closeDetailModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="isLoadingDetail" class="text-center py-4 text-muted">
+          <div class="spinner-border spinner-border-sm text-primary me-2"></div> Đang tải thông tin...
+        </div>
+
+        <div *ngIf="!isLoadingDetail && selectedStudentDetail">
+          <!-- Thông tin cá nhân -->
+          <div class="row g-3 mb-4 p-3 bg-light rounded-3">
+            <div class="col-md-6">
+              <div><strong>Mã SV:</strong> <span class="badge bg-secondary font-monospace">{{ selectedStudentDetail.studentCode }}</span></div>
+              <div class="mt-2"><strong>Họ và tên:</strong> {{ selectedStudentDetail.fullName }}</div>
+              <div class="mt-2"><strong>Giới tính:</strong> {{ selectedStudentDetail.gender }}</div>
+              <div class="mt-2"><strong>Ngày sinh:</strong> {{ selectedStudentDetail.dateOfBirth | date:'dd/MM/yyyy' }}</div>
+            </div>
+            <div class="col-md-6">
+              <div><strong>Lớp:</strong> <span class="badge bg-info text-dark">{{ selectedStudentDetail.classRoomName || 'Chưa xếp lớp' }}</span></div>
+              <div class="mt-2"><strong>Email:</strong> {{ selectedStudentDetail.email || '(Chưa cập nhật)' }}</div>
+              <div class="mt-2"><strong>SĐT:</strong> {{ selectedStudentDetail.phoneNumber || '(Chưa cập nhật)' }}</div>
+              <div class="mt-2"><strong>Địa chỉ:</strong> {{ selectedStudentDetail.address || '(Chưa cập nhật)' }}</div>
+            </div>
+          </div>
+
+          <!-- Bảng các môn học đã đăng ký -->
+          <h6 class="fw-bold mb-3"><i class="bi bi-journal-check me-2 text-success"></i>Các Môn Học Đã Đăng Ký ({{ selectedStudentDetail.enrolledCourses.length }})</h6>
+          <div class="table-responsive">
+            <table class="table table-bordered align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Mã Môn</th>
+                  <th>Tên Môn Học</th>
+                  <th class="text-center">Số TC</th>
+                  <th>Ngày Đăng Ký</th>
+                  <th class="text-center">Điểm Số</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="selectedStudentDetail.enrolledCourses.length === 0">
+                  <td colspan="5" class="text-center text-muted py-3">Học sinh này chưa đăng ký môn học nào.</td>
+                </tr>
+                <tr *ngFor="let c of selectedStudentDetail.enrolledCourses">
+                  <td><span class="badge bg-secondary font-monospace">{{ c.courseCode }}</span></td>
+                  <td class="fw-semibold">{{ c.courseTitle }}</td>
+                  <td class="text-center">{{ c.credits }} TC</td>
+                  <td>{{ c.enrollmentDate | date:'dd/MM/yyyy' }}</td>
+                  <td class="text-center">
+                    <span *ngIf="c.grade !== null && c.grade !== undefined" class="badge" [ngClass]="c.grade >= 5.0 ? 'bg-success' : 'bg-danger'">
+                      {{ c.grade | number:'1.1-1' }}
+                    </span>
+                    <span *ngIf="c.grade === null || c.grade === undefined" class="badge bg-light text-muted border">
+                      Chưa có điểm
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDetailModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Xác Nhận Xóa -->
+<div *ngIf="showDeleteModal" class="modal-backdrop fade show"></div>
+<div *ngIf="showDeleteModal" class="modal fade show d-block" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold text-danger">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Xác Nhận Xóa
+        </h5>
+        <button type="button" class="btn-close" (click)="closeDeleteModal()"></button>
+      </div>
+      <div class="modal-body">
+        Bạn có chắc chắn muốn xóa học sinh <strong>{{ studentToDelete?.fullName }} ({{ studentToDelete?.studentCode }})</strong> khỏi hệ thống không?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDeleteModal()">Hủy</button>
+        <button type="button" class="btn btn-danger" (click)="confirmDelete()">Đồng Ý Xóa</button>
+      </div>
+    </div>
+  </div>
+</div>
