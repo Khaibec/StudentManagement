@@ -8,6 +8,7 @@ using StudentManagement.Api.Repositories.Interfaces;
 using StudentManagement.Api.Repositories.Implementations;
 using StudentManagement.Api.Services.Interfaces;
 using StudentManagement.Api.Services.Implementations;
+using StudentManagement.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,8 +57,18 @@ builder.Services.AddAuthorization();
 
 // Đăng ký các tầng Repositories và Services vào DI Container
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IClassRepository, ClassRepository>();
+builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IClassService, ClassService>();
+builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // 4. Cấu hình Controllers
 builder.Services.AddControllers();
@@ -118,6 +129,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 // 7. Cấu hình HTTP request pipeline
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
