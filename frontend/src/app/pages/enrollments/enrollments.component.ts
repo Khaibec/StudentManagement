@@ -68,12 +68,14 @@ export class EnrollmentsComponent implements OnInit {
     this.studentService.getAll({ pageNumber: 1, pageSize: 100 }).subscribe({
       next: (res) => {
         if (res.success) this.students = res.data.items;
+        this.cdr.detectChanges();
       }
     });
 
     this.courseService.getAll().subscribe({
       next: (res) => {
         if (res.success) this.courses = res.data;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -121,9 +123,11 @@ export class EnrollmentsComponent implements OnInit {
         this.closeEnrollModal();
         this.showSuccess('Đăng ký môn học thành công!');
         this.loadEnrollments();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.errorMessage = err.error?.message || 'Không thể đăng ký môn học.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -151,9 +155,11 @@ export class EnrollmentsComponent implements OnInit {
         this.closeGradeModal();
         this.showSuccess('Cập nhật điểm thành công!');
         this.loadEnrollments();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.errorMessage = err.error?.message || 'Lỗi khi cập nhật điểm.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -175,10 +181,12 @@ export class EnrollmentsComponent implements OnInit {
         this.closeCancelModal();
         this.showSuccess('Đã hủy đăng ký môn học thành công!');
         this.loadEnrollments();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.closeCancelModal();
         this.errorMessage = err.error?.message || 'Không thể hủy đăng ký môn học này.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -187,6 +195,7 @@ export class EnrollmentsComponent implements OnInit {
     this.successMessage = msg;
     setTimeout(() => {
       this.successMessage = '';
+      this.cdr.detectChanges();
     }, 4000);
   }
 }

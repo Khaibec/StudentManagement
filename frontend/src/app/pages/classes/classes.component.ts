@@ -97,9 +97,11 @@ export class ClassesComponent implements OnInit {
           this.closeModal();
           this.showSuccess('Cập nhật lớp học thành công!');
           this.loadClasses();
+          this.cdr.detectChanges();
         },
         error: (err) => {
           this.errorMessage = err.error?.message || 'Lỗi khi cập nhật lớp học.';
+          this.cdr.detectChanges();
         }
       });
     } else {
@@ -108,9 +110,11 @@ export class ClassesComponent implements OnInit {
           this.closeModal();
           this.showSuccess('Thêm mới lớp học thành công!');
           this.loadClasses();
+          this.cdr.detectChanges();
         },
         error: (err) => {
           this.errorMessage = err.error?.message || 'Lỗi khi tạo lớp học.';
+          this.cdr.detectChanges();
         }
       });
     }
@@ -133,10 +137,12 @@ export class ClassesComponent implements OnInit {
         this.closeDeleteModal();
         this.showSuccess('Đã xóa lớp học thành công!');
         this.loadClasses();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.closeDeleteModal();
         this.errorMessage = err.error?.message || 'Không thể xóa lớp học này.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -145,6 +151,7 @@ export class ClassesComponent implements OnInit {
     this.successMessage = msg;
     setTimeout(() => {
       this.successMessage = '';
+      this.cdr.detectChanges();
     }, 4000);
   }
 }

@@ -188,9 +188,11 @@ export class StudentsComponent implements OnInit {
           this.closeModal();
           this.showSuccess('Cập nhật học sinh thành công!');
           this.loadStudents();
+          this.cdr.detectChanges();
         },
         error: (err) => {
           this.errorMessage = err.error?.message || 'Lỗi khi cập nhật học sinh.';
+          this.cdr.detectChanges();
         }
       });
     } else {
@@ -199,9 +201,11 @@ export class StudentsComponent implements OnInit {
           this.closeModal();
           this.showSuccess('Thêm mới học sinh thành công!');
           this.loadStudents();
+          this.cdr.detectChanges();
         },
         error: (err) => {
           this.errorMessage = err.error?.message || 'Lỗi khi tạo học sinh.';
+          this.cdr.detectChanges();
         }
       });
     }
@@ -249,10 +253,12 @@ export class StudentsComponent implements OnInit {
         this.closeDeleteModal();
         this.showSuccess('Đã xóa học sinh thành công!');
         this.loadStudents();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.closeDeleteModal();
         this.errorMessage = err.error?.message || 'Không thể xóa học sinh này.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -261,6 +267,7 @@ export class StudentsComponent implements OnInit {
     this.successMessage = msg;
     setTimeout(() => {
       this.successMessage = '';
+      this.cdr.detectChanges();
     }, 4000);
   }
 }
