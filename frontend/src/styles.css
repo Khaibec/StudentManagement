@@ -10,18 +10,18 @@ body {
 
 .card {
   border: none;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .card-header {
-  background-color: transparent;
+  background-color: #fff;
   border-bottom: 1px solid #edf2f7;
   font-weight: 600;
 }
 
 .table th {
-  background-color: #f1f5f9;
+  background-color: #f8fafc;
   color: #475569;
   font-weight: 600;
 }
@@ -37,11 +37,11 @@ body {
 }
 
 .badge-admin {
-  background-color: #ef4444;
+  background-color: #dc3545;
   color: white;
 }
 
 .badge-user {
-  background-color: #10b981;
+  background-color: #198754;
   color: white;
 }
