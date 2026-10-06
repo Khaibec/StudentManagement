@@ -4,7 +4,7 @@
     <div>
       <h3 class="fw-bold mb-1">Xin chào, {{ currentUser?.fullName }}! 👋</h3>
       <p class="text-muted mb-0 small">
-        Chào mừng đến với Hệ thống Quản lý Học sinh (Angular 12). Bạn đang đăng nhập với vai trò:
+        Chào mừng đến với Hệ thống Quản lý Học sinh. Bạn đang đăng nhập với vai trò:
         <span class="badge ms-1" [ngClass]="authService.isAdmin() ? 'badge-admin' : 'badge-user'">
           {{ currentUser?.role }}
         </span>
