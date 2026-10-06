@@ -1,4 +1,4 @@
-﻿using StudentManagement.Api.DTOs.Enrollments;
+using StudentManagement.Api.DTOs.Enrollments;
 using StudentManagement.Api.Entities;
 using StudentManagement.Api.Repositories.Interfaces;
 using StudentManagement.Api.Services.Interfaces;

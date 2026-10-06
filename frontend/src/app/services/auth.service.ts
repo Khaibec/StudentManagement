@@ -1,4 +1,4 @@
-﻿import { Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
@@ -13,15 +13,21 @@ export class AuthService {
   private readonly TOKEN_KEY = 'sm_token';
   private readonly USER_KEY = 'sm_user';
 
-  // BehaviorSubject quản lý trạng thái đăng nhập (chuẩn RxJS Angular 12)
+  // BehaviorSubject trong RxJS lưu giữ giá trị hiện tại của user đã đăng nhập.
+  // Khi một component mới subscribe vào, nó sẽ lập tức nhận được giá trị mới nhất này ngay.
   private currentUserSubject: BehaviorSubject<AuthResponse | null>;
+  
+  // Public biến này dưới dạng Observable (chỉ đọc) để các component khác có thể lắng nghe (subcribe)
+  // mà không thể tự ý phát sinh dữ liệu bừa bãi bằng lệnh .next() từ bên ngoài.
   public currentUser$: Observable<AuthResponse | null>;
 
   constructor(private http: HttpClient, private router: Router) {
+    // Khởi tạo BehaviorSubject với dữ liệu đã lưu trong localStorage (giúp giữ trạng thái đăng nhập khi ấn F5)
     this.currentUserSubject = new BehaviorSubject<AuthResponse | null>(this.getUserFromStorage());
     this.currentUser$ = this.currentUserSubject.asObservable();
   }
 
+  // Getter cho phép đọc nhanh thông tin user hiện tại đồng bộ (synchronous) mà không cần phải .subscribe()
   public get currentUserValue(): AuthResponse | null {
     return this.currentUserSubject.value;
   }
@@ -36,6 +42,8 @@ export class AuthService {
 
   login(request: LoginRequest): Observable<ApiResponse<AuthResponse>> {
     return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/login`, request).pipe(
+      // Toán tử tap() của RxJS dùng để thực hiện "tác dụng phụ" (Side Effect) như lưu token,
+      // mà không làm thay đổi luồng dữ liệu trả về cho component gọi hàm này.
       tap((res) => {
         if (res.success && res.data) {
           this.saveAuth(res.data);
@@ -55,8 +63,10 @@ export class AuthService {
   }
 
   logout(): void {
+    // Xóa sạch thông tin xác thực khỏi trình duyệt
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
+    // Bắn thông báo null tới toàn bộ các component đang lắng nghe (để cập nhật lại giao diện Navbar, Menu...)
     this.currentUserSubject.next(null);
     this.router.navigate(['/login']);
   }

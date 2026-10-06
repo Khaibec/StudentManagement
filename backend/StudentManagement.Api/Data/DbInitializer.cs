@@ -1,4 +1,4 @@
-﻿using StudentManagement.Api.Entities;
+using StudentManagement.Api.Entities;
 
 namespace StudentManagement.Api.Data;
 

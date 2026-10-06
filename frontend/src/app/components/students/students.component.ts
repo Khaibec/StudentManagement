@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { StudentService } from '../../services/student.service';
 import { ClassService } from '../../services/class.service';
@@ -52,6 +52,8 @@ export class StudentsComponent implements OnInit {
     public authService: AuthService,
     private fb: FormBuilder
   ) {
+    // Khởi tạo FormGroup bằng FormBuilder (Mô hình Reactive Forms chuẩn của Angular)
+    // Các Validators giúp kiểm tra dữ liệu hợp lệ ngay trên trình duyệt trước khi gửi về API
     this.studentForm = this.fb.group({
       studentCode: ['', [Validators.required, Validators.maxLength(20)]],
       fullName: ['', [Validators.required, Validators.maxLength(100)]],
@@ -129,6 +131,7 @@ export class StudentsComponent implements OnInit {
     this.isEditMode = false;
     this.selectedStudentId = null;
     this.studentForm.reset({ gender: 'Nam', classRoomId: null });
+    // Khi thêm mới thì cho phép nhập Mã học sinh
     this.studentForm.get('studentCode')?.enable();
     this.showModal = true;
   }
@@ -138,6 +141,7 @@ export class StudentsComponent implements OnInit {
     this.selectedStudentId = s.id;
     const dob = s.dateOfBirth ? s.dateOfBirth.split('T')[0] : '';
 
+    // patchValue() tự động đổ dữ liệu của học sinh vào các trường tương ứng trong form
     this.studentForm.patchValue({
       studentCode: s.studentCode,
       fullName: s.fullName,
@@ -148,6 +152,7 @@ export class StudentsComponent implements OnInit {
       address: s.address,
       classRoomId: s.classRoomId
     });
+    // Khóa trường Mã học sinh khi cập nhật (vì Mã học sinh là định danh không được sửa)
     this.studentForm.get('studentCode')?.disable();
     this.showModal = true;
   }
@@ -158,11 +163,16 @@ export class StudentsComponent implements OnInit {
   }
 
   onSubmit(): void {
+    // Nếu dữ liệu form chưa thỏa mãn các Validators (ví dụ để trống tên, sai định dạng email...)
     if (this.studentForm.invalid) {
+      // Đánh dấu tất cả ô nhập là "touched" để kích hoạt hiển thị thông báo lỗi màu đỏ trên giao diện
       this.studentForm.markAllAsTouched();
       return;
     }
 
+    // LƯU Ý QUAN TRỌNG: Dùng getRawValue() thay vì .value
+    // Vì .value sẽ tự động BỎ QUA các ô nhập đang bị disable (ở đây là studentCode khi sửa),
+    // trong khi getRawValue() sẽ lấy đầy đủ toàn bộ giá trị của form kể cả ô bị disable.
     const val = this.studentForm.getRawValue();
     if (this.isEditMode && this.selectedStudentId) {
       this.studentService.update(this.selectedStudentId, val).subscribe(

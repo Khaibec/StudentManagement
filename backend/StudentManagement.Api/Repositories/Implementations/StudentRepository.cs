@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using StudentManagement.Api.Data;
 using StudentManagement.Api.DTOs.Students;
 using StudentManagement.Api.Entities;
@@ -17,12 +17,16 @@ public class StudentRepository : IStudentRepository
 
     public async Task<(IEnumerable<Student> Items, int TotalCount)> GetPagedAsync(StudentQueryParameters query)
     {
+        // AsQueryable() giúp xây dựng "cây biểu thức truy vấn" (Expression Tree) mà CHƯA thực thi ngay (Deferred Execution).
+        // EF Core chỉ gửi câu lệnh SQL xuống database khi ta gọi ToListAsync() hoặc CountAsync().
+        // Include(...) thực hiện phép JOIN trong SQL (Eager Loading) để lấy luôn thông tin ClassRoom và Enrollments đi kèm.
         var q = _context.Students
             .Include(s => s.ClassRoom)
             .Include(s => s.Enrollments)
             .AsQueryable();
 
         // 1. Tìm kiếm theo Từ khóa (Tên, Mã SV, Email)
+        // Chỉ thêm điều kiện WHERE nếu người dùng có nhập từ khóa tìm kiếm
         if (!string.IsNullOrWhiteSpace(query.SearchTerm))
         {
             var term = query.SearchTerm.Trim().ToLower();
@@ -44,9 +48,11 @@ public class StudentRepository : IStudentRepository
             q = q.Where(s => s.Gender.ToLower() == gender);
         }
 
+        // Đếm tổng số bản ghi thỏa mãn điều kiện lọc (dùng cho phân trang ở Frontend)
         var totalCount = await q.CountAsync();
 
-        // 4. Sắp xếp (Sorting)
+        // 4. Sắp xếp động (Dynamic Sorting)
+        // Dựa vào tham số query gửi lên từ người dùng để chọn cột và chiều sắp xếp (asc / desc)
         bool isDesc = string.Equals(query.SortOrder, "desc", StringComparison.OrdinalIgnoreCase);
         q = (query.SortBy?.ToLower()) switch
         {
@@ -55,7 +61,10 @@ public class StudentRepository : IStudentRepository
             _ => isDesc ? q.OrderByDescending(s => s.FullName) : q.OrderBy(s => s.FullName)
         };
 
-        // 5. Phân trang (Pagination)
+        // 5. Phân trang tại Server (Server-side Pagination)
+        // Skip(n): Bỏ qua n bản ghi đầu tiên
+        // Take(k): Chỉ lấy k bản ghi tiếp theo
+        // Điều này dịch thành lệnh "OFFSET ... ROWS FETCH NEXT ... ROWS ONLY" trong SQL, giúp truy vấn siêu nhanh và không tốn RAM máy chủ
         int page = query.PageNumber > 0 ? query.PageNumber : 1;
         int size = query.PageSize > 0 ? query.PageSize : 10;
         var items = await q.Skip((page - 1) * size).Take(size).ToListAsync();
@@ -73,6 +82,7 @@ public class StudentRepository : IStudentRepository
 
     public async Task<Student?> GetByIdWithDetailsAsync(int id)
     {
+        // ThenInclude: Nạp dữ liệu đa cấp (Student -> Enrollments -> Course của Enrollment đó)
         return await _context.Students
             .Include(s => s.ClassRoom)
             .Include(s => s.Enrollments)

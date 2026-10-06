@@ -1,4 +1,4 @@
-﻿using StudentManagement.Api.DTOs.Auth;
+using StudentManagement.Api.DTOs.Auth;
 using StudentManagement.Api.Entities;
 using StudentManagement.Api.Repositories.Interfaces;
 using StudentManagement.Api.Services.Interfaces;
