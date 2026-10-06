@@ -1,4 +1,4 @@
-﻿export interface StudentDto {
+export interface StudentDto {
   id: number;
   studentCode: string;
   fullName: string;
@@ -48,6 +48,7 @@ export interface UpdateStudentDto {
 }
 
 export interface StudentQueryParameters {
+  id?: number;
   searchTerm?: string;
   classRoomId?: number;
   gender?: string;

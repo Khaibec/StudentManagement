@@ -1,7 +1,8 @@
-﻿namespace StudentManagement.Api.DTOs.Students;
+namespace StudentManagement.Api.DTOs.Students;
 
 public class StudentQueryParameters
 {
+    public int? Id { get; set; } // Tìm kiếm chính xác theo ID học sinh
     public string? SearchTerm { get; set; }
     public int? ClassRoomId { get; set; }
     public string? Gender { get; set; }

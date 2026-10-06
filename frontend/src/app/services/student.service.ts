@@ -24,6 +24,9 @@ export class StudentService {
       .set('pageNumber', query.pageNumber.toString())
       .set('pageSize', query.pageSize.toString());
 
+    if (query.id && query.id > 0) {
+      params = params.set('id', query.id.toString());
+    }
     if (query.searchTerm && query.searchTerm.trim()) {
       params = params.set('searchTerm', query.searchTerm.trim());
     }

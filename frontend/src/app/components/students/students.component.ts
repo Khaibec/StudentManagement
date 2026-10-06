@@ -46,6 +46,13 @@ export class StudentsComponent implements OnInit {
   showDeleteModal = false;
   studentToDelete: StudentDto | null = null;
 
+  // Tính năng tra cứu học sinh theo ID
+  showFindByIdModal = false;
+  searchStudentId: number | null = null;
+  foundStudent: StudentDetailDto | null = null;
+  isSearchingById = false;
+  findByIdError = '';
+
   constructor(
     private studentService: StudentService,
     private classService: ClassService,
@@ -244,6 +251,55 @@ export class StudentsComponent implements OnInit {
         this.errorMessage = err.error?.message || 'Không thể xóa học sinh này.';
       }
     );
+  }
+
+  // Các phương thức hỗ trợ Tra cứu học sinh theo ID
+  openFindByIdModal(): void {
+    this.showFindByIdModal = true;
+    this.searchStudentId = null;
+    this.foundStudent = null;
+    this.findByIdError = '';
+  }
+
+  closeFindByIdModal(): void {
+    this.showFindByIdModal = false;
+    this.searchStudentId = null;
+    this.foundStudent = null;
+    this.findByIdError = '';
+  }
+
+  findStudentById(): void {
+    if (!this.searchStudentId || this.searchStudentId <= 0) {
+      this.findByIdError = 'Vui lòng nhập ID học sinh hợp lệ (số nguyên dương).';
+      return;
+    }
+
+    this.isSearchingById = true;
+    this.findByIdError = '';
+    this.foundStudent = null;
+
+    this.studentService.getById(this.searchStudentId).subscribe(
+      (res) => {
+        this.isSearchingById = false;
+        if (res.success && res.data) {
+          this.foundStudent = res.data;
+        } else {
+          this.findByIdError = res.message || 'Không tìm thấy học sinh.';
+        }
+      },
+      (err) => {
+        this.isSearchingById = false;
+        this.findByIdError = err.error?.message || `Không tìm thấy học sinh với ID = ${this.searchStudentId}.`;
+      }
+    );
+  }
+
+  viewDetailsFromFound(): void {
+    if (this.foundStudent) {
+      this.selectedStudentDetail = this.foundStudent;
+      this.showDetailModal = true;
+      this.closeFindByIdModal();
+    }
   }
 
   private showSuccess(msg: string): void {

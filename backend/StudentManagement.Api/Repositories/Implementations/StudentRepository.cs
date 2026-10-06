@@ -25,12 +25,21 @@ public class StudentRepository : IStudentRepository
             .Include(s => s.Enrollments)
             .AsQueryable();
 
-        // 1. Tìm kiếm theo Từ khóa (Tên, Mã SV, Email)
+        // 1. Tìm kiếm theo ID học sinh (nếu có truyền Id cụ thể)
+        if (query.Id.HasValue && query.Id.Value > 0)
+        {
+            q = q.Where(s => s.Id == query.Id.Value);
+        }
+
+        // 2. Tìm kiếm theo Từ khóa (Hỗ trợ tìm theo ID, Tên, Mã SV, Email)
         // Chỉ thêm điều kiện WHERE nếu người dùng có nhập từ khóa tìm kiếm
         if (!string.IsNullOrWhiteSpace(query.SearchTerm))
         {
             var term = query.SearchTerm.Trim().ToLower();
-            q = q.Where(s => s.FullName.ToLower().Contains(term) ||
+            bool isNumeric = int.TryParse(term, out var searchId);
+
+            q = q.Where(s => (isNumeric && s.Id == searchId) ||
+                             s.FullName.ToLower().Contains(term) ||
                              s.StudentCode.ToLower().Contains(term) ||
                              (s.Email != null && s.Email.ToLower().Contains(term)));
         }
