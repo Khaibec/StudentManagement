@@ -1,4 +1,4 @@
-﻿import { NgModule } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { LoginComponent } from './components/login/login.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
@@ -6,10 +6,14 @@ import { StudentsComponent } from './components/students/students.component';
 import { ClassesComponent } from './components/classes/classes.component';
 import { CoursesComponent } from './components/courses/courses.component';
 import { EnrollmentsComponent } from './components/enrollments/enrollments.component';
+import { ProfileComponent } from './components/profile/profile.component';
+import { AuthCallbackComponent } from './components/auth-callback/auth-callback.component';
 import { AuthGuard } from './core/auth.guard';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
+  { path: 'auth/callback', component: AuthCallbackComponent },
+  { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard] },
   { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
   { path: 'students', component: StudentsComponent, canActivate: [AuthGuard] },
   { path: 'classes', component: ClassesComponent, canActivate: [AuthGuard] },

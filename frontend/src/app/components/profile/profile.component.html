@@ -1,0 +1,187 @@
+<div class="container py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold mb-1">
+        <i class="bi bi-person-circle me-2 text-primary"></i>Hồ Sơ & Liên Kết Tài Khoản
+      </h3>
+      <p class="text-muted mb-0 small">Quản lý thông tin cá nhân và các tài khoản mạng xã hội bên thứ ba đã kết nối</p>
+    </div>
+  </div>
+
+  <!-- Thông báo thành công / lỗi -->
+  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="bi bi-check-circle-fill me-2"></i>{{ successMessage }}
+    <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+  </div>
+
+  <div class="row g-4">
+    <!-- Cột 1: Thông tin tài khoản -->
+    <div class="col-lg-5">
+      <div class="card shadow-sm h-100 border-0">
+        <div class="card-header bg-white py-3 border-bottom">
+          <h5 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-person-vcard me-2 text-primary"></i>Thông Tin Cá Nhân
+          </h5>
+        </div>
+        <div class="card-body p-4">
+          <div *ngIf="isLoadingProfile" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="text-muted small mt-2">Đang tải thông tin...</p>
+          </div>
+
+          <div *ngIf="!isLoadingProfile && profile">
+            <div class="d-flex align-items-center gap-3 mb-4">
+              <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 64px; height: 64px; font-size: 1.75rem;">
+                <i class="bi bi-person"></i>
+              </div>
+              <div>
+                <h5 class="fw-bold mb-1">{{ profile.fullName }}</h5>
+                <span class="badge" [ngClass]="profile.role === 'Admin' ? 'bg-danger' : 'bg-primary'">
+                  {{ profile.role }}
+                </span>
+              </div>
+            </div>
+
+            <ul class="list-group list-group-flush small">
+              <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                <span class="text-muted">Tên đăng nhập:</span>
+                <span class="fw-semibold">{{ profile.username }}</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                <span class="text-muted">Email:</span>
+                <span class="fw-semibold">{{ profile.email || 'Chưa cập nhật' }}</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                <span class="text-muted">Mật khẩu đăng nhập:</span>
+                <span>
+                  <span *ngIf="profile.hasPassword" class="badge bg-success-subtle text-success border border-success-subtle">
+                    <i class="bi bi-check-circle me-1"></i>Đã thiết lập
+                  </span>
+                  <span *ngIf="!profile.hasPassword" class="badge bg-warning-subtle text-dark border border-warning-subtle">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Đăng nhập qua OAuth (Chưa có mật khẩu)
+                  </span>
+                </span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                <span class="text-muted">Ngày tạo tài khoản:</span>
+                <span class="fw-semibold">{{ profile.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cột 2: Danh sách tài khoản liên kết mạng xã hội (OAuth) -->
+    <div class="col-lg-7">
+      <div class="card shadow-sm h-100 border-0">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+          <h5 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-shield-lock me-2 text-success"></i>Liên kết tài khoản mạng xã hội
+          </h5>
+          <span class="badge bg-secondary-subtle text-dark small">OAuth 2.0</span>
+        </div>
+        <div class="card-body p-4">
+          <p class="text-muted small mb-4">
+            Bạn có thể kết nối tài khoản Google, Facebook, hoặc GitHub.
+          </p>
+
+          <div *ngIf="isLoadingAccounts" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="text-muted small mt-2">Đang tải danh sách liên kết...</p>
+          </div>
+
+          <div *ngIf="!isLoadingAccounts" class="d-flex flex-column gap-3">
+            <div
+              *ngFor="let item of linkedAccounts"
+              class="border rounded p-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 bg-light"
+            >
+              <!-- Info bên trái -->
+              <div class="d-flex align-items-center gap-3">
+                <div class="fs-2 d-flex align-items-center justify-content-center" style="width: 48px;">
+                  <i [class]="getProviderIcon(item.provider)"></i>
+                </div>
+                <div>
+                  <div class="d-flex align-items-center gap-2">
+                    <h6 class="fw-bold mb-0">{{ item.provider }}</h6>
+                    <span
+                      class="badge"
+                      [ngClass]="item.isLinked ? 'bg-success' : 'bg-secondary'"
+                    >
+                      <i *ngIf="item.isLinked" class="bi bi-check-circle me-1"></i>
+                      {{ item.isLinked ? 'Đã liên kết' : 'Chưa liên kết' }}
+                    </span>
+                  </div>
+                  <div class="text-muted small mt-1">
+                    <span *ngIf="item.isLinked && item.providerEmail">
+                      <i class="bi bi-envelope me-1"></i>{{ item.providerEmail }}
+                    </span>
+                    <span *ngIf="item.isLinked && item.linkedAt" class="ms-2">
+                      <i class="bi bi-clock me-1"></i>{{ item.linkedAt | date:'dd/MM/yyyy' }}
+                    </span>
+                    <span *ngIf="!item.isLinked">
+                      Chưa kết nối với tài khoản {{ item.provider }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Nút hành động bên phải -->
+              <div>
+                <button
+                  *ngIf="!item.isLinked"
+                  class="btn btn-outline-primary btn-sm px-3 fw-semibold"
+                  (click)="connectAccount(item.provider)"
+                >
+                  <i class="bi bi-link-45deg me-1"></i> Kết nối
+                </button>
+                <button
+                  *ngIf="item.isLinked"
+                  class="btn btn-outline-danger btn-sm px-3"
+                  (click)="openUnlinkModal(item.provider)"
+                >
+                  <i class="bi bi-x-circle me-1"></i> Hủy liên kết
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Xác Nhận Hủy Liên Kết -->
+<div *ngIf="showUnlinkModal" class="modal-backdrop fade show"></div>
+<div *ngIf="showUnlinkModal" class="modal fade show d-block" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold text-danger">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Xác Nhận Hủy Liên Kết
+        </h5>
+        <button type="button" class="btn-close" (click)="closeUnlinkModal()"></button>
+      </div>
+      <div class="modal-body">
+        Bạn có chắc chắn muốn hủy liên kết với tài khoản <strong>{{ providerToUnlink }}</strong> không?
+        <div class="alert alert-warning py-2 small mt-3 mb-0">
+          <i class="bi bi-info-circle me-1"></i>
+          Sau khi hủy, bạn sẽ không thể dùng tài khoản {{ providerToUnlink }} này để đăng nhập trực tiếp trừ khi kết nối lại.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeUnlinkModal()" [disabled]="isUnlinking">Hủy</button>
+        <button type="button" class="btn btn-danger" (click)="confirmUnlink()" [disabled]="isUnlinking">
+          <span *ngIf="isUnlinking" class="spinner-border spinner-border-sm me-1" role="status"></span>
+          Đồng Ý Hủy
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

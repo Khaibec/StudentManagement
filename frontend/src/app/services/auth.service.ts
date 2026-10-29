@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { ApiResponse, AuthResponse, LoginRequest, RegisterRequest } from '../models/auth.model';
+import { ApiResponse, AuthResponse, LinkedAccountDto, LoginRequest, RegisterRequest, UserProfile } from '../models/auth.model';
 
 @Injectable({
   providedIn: 'root'
@@ -60,6 +60,41 @@ export class AuthService {
         }
       })
     );
+  }
+
+  // Bắt đầu luồng đăng nhập với OAuth Provider (Google, Facebook, GitHub)
+  loginWithOAuth(provider: string): void {
+    window.location.href = `${this.apiUrl}/external-login?provider=${provider}`;
+  }
+
+  // Bắt đầu luồng liên kết tài khoản OAuth cho người dùng đang đăng nhập
+  linkOAuthAccount(provider: string): void {
+    const token = this.getToken();
+    if (!token) {
+      this.router.navigate(['/login']);
+      return;
+    }
+    window.location.href = `${this.apiUrl}/link-external?provider=${provider}&accessToken=${encodeURIComponent(token)}`;
+  }
+
+  // Lấy danh sách trạng thái liên kết các bên thứ 3
+  getLinkedAccounts(): Observable<ApiResponse<LinkedAccountDto[]>> {
+    return this.http.get<ApiResponse<LinkedAccountDto[]>>(`${this.apiUrl}/external-accounts`);
+  }
+
+  // Hủy liên kết tài khoản bên thứ 3
+  unlinkAccount(provider: string): Observable<ApiResponse<boolean>> {
+    return this.http.delete<ApiResponse<boolean>>(`${this.apiUrl}/external-accounts/${provider}`);
+  }
+
+  // Lấy thông tin tài khoản hiện tại
+  getProfile(): Observable<ApiResponse<UserProfile>> {
+    return this.http.get<ApiResponse<UserProfile>>(`${this.apiUrl}/me`);
+  }
+
+  // Lưu thông tin đăng nhập nhận được từ OAuth callback
+  saveAuthTokenAndUser(authData: AuthResponse): void {
+    this.saveAuth(authData);
   }
 
   logout(): void {

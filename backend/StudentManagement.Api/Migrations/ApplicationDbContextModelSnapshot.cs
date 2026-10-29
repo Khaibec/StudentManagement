@@ -169,6 +169,9 @@ namespace StudentManagement.Api.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -194,6 +197,48 @@ namespace StudentManagement.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("StudentManagement.Api.Entities.UserExternalAccount", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("LinkedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("ProviderEmail")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("ProviderKey")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("Provider", "ProviderKey")
+                        .IsUnique();
+
+                    b.ToTable("UserExternalAccounts");
                 });
 
             modelBuilder.Entity("StudentManagement.Api.Entities.Enrollment", b =>
@@ -225,6 +270,17 @@ namespace StudentManagement.Api.Migrations
                     b.Navigation("ClassRoom");
                 });
 
+            modelBuilder.Entity("StudentManagement.Api.Entities.UserExternalAccount", b =>
+                {
+                    b.HasOne("StudentManagement.Api.Entities.User", "User")
+                        .WithMany("ExternalAccounts")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("StudentManagement.Api.Entities.ClassRoom", b =>
                 {
                     b.Navigation("Students");
@@ -238,6 +294,11 @@ namespace StudentManagement.Api.Migrations
             modelBuilder.Entity("StudentManagement.Api.Entities.Student", b =>
                 {
                     b.Navigation("Enrollments");
+                });
+
+            modelBuilder.Entity("StudentManagement.Api.Entities.User", b =>
+                {
+                    b.Navigation("ExternalAccounts");
                 });
 #pragma warning restore 612, 618
         }

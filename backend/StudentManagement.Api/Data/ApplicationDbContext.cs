@@ -17,6 +17,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Student> Students => Set<Student>();
     public DbSet<Course> Courses => Set<Course>();
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
+    public DbSet<UserExternalAccount> UserExternalAccounts => Set<UserExternalAccount>();
 
     // OnModelCreating sử dụng "Fluent API" để tùy biến cấu trúc database (ràng buộc, khóa ngoại, quan hệ...)
     // Cách này linh hoạt và chuyên nghiệp hơn so với việc gắn Data Annotations trực tiếp vào model.
@@ -87,6 +88,22 @@ public class ApplicationDbContext : DbContext
             entity.HasOne(e => e.Course)
                   .WithMany(c => c.Enrollments)
                   .HasForeignKey(e => e.CourseId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // 6. Cấu hình bảng UserExternalAccount (Liên kết tài khoản mạng xã hội OAuth)
+        modelBuilder.Entity<UserExternalAccount>(entity =>
+        {
+            // Đảm bảo 1 tài khoản MXH không bị trùng lặp trong hệ thống
+            entity.HasIndex(e => new { e.Provider, e.ProviderKey }).IsUnique();
+            entity.Property(e => e.Provider).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.ProviderKey).HasMaxLength(150).IsRequired();
+            entity.Property(e => e.ProviderDisplayName).HasMaxLength(150);
+            entity.Property(e => e.ProviderEmail).HasMaxLength(150);
+
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.ExternalAccounts)
+                  .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
     }

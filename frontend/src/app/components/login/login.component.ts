@@ -1,4 +1,4 @@
-﻿import { Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -49,6 +49,10 @@ export class LoginComponent {
         this.errorMessage = err.error?.message || 'Đăng nhập không thành công. Vui lòng kiểm tra lại tài khoản hoặc mật khẩu.';
       }
     );
+  }
+
+  loginOAuth(provider: string): void {
+    this.authService.loginWithOAuth(provider);
   }
 
   fillAdmin(): void {

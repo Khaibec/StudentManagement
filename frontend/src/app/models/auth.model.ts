@@ -1,4 +1,4 @@
-﻿export interface ApiResponse<T> {
+export interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
@@ -27,6 +27,16 @@ export interface UserProfile {
   id: number;
   username: string;
   fullName: string;
+  email?: string;
   role: string;
+  hasPassword: boolean;
   createdAt: string;
+}
+
+export interface LinkedAccountDto {
+  provider: string; // 'Google' | 'Facebook' | 'GitHub'
+  isLinked: boolean;
+  providerEmail?: string;
+  providerDisplayName?: string;
+  linkedAt?: string;
 }

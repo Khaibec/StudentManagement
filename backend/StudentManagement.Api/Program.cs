@@ -36,9 +36,9 @@ var jwtKey = builder.Configuration["Jwt:Key"] ?? "StudentManagementSystemSecretK
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "StudentManagementApi";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "StudentManagementClient";
 
-builder.Services.AddAuthentication(options =>
+var authBuilder = builder.Services.AddAuthentication(options =>
 {
-    // Chỉ định cơ chế xác thực mặc định là JWT Bearer
+    // Chỉ định cơ chế xác thực mặc định là JWT Bearer cho các API endpoints
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
@@ -56,7 +56,55 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)), // Khóa bí mật dùng để giải mã / xác thực
         ClockSkew = TimeSpan.Zero // Mặc định .NET cho phép chênh lệch thời gian 5 phút. Đặt TimeSpan.Zero để token hết hạn chính xác từng giây.
     };
+})
+.AddCookie("ExternalAuth", options =>
+{
+    // Cookie tạm thời lưu trữ thông tin xác thực OAuth trước khi chuyển đổi sang JWT token
+    options.Cookie.Name = "SM_ExternalAuth";
+    options.Cookie.SameSite = SameSiteMode.Lax; // Cần thiết để cookie hoạt động khi Provider redirect về từ bên ngoài
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
 });
+
+// Cấu hình các nhà cung cấp OAuth nếu có cấu hình ClientId/Secret
+var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
+var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(googleClientSecret))
+{
+    authBuilder.AddGoogle(options =>
+    {
+        options.SignInScheme = "ExternalAuth";
+        options.ClientId = googleClientId;
+        options.ClientSecret = googleClientSecret;
+    });
+}
+
+var facebookAppId = builder.Configuration["Authentication:Facebook:AppId"];
+var facebookAppSecret = builder.Configuration["Authentication:Facebook:AppSecret"];
+if (!string.IsNullOrWhiteSpace(facebookAppId) && !string.IsNullOrWhiteSpace(facebookAppSecret))
+{
+    authBuilder.AddFacebook(options =>
+    {
+        options.SignInScheme = "ExternalAuth";
+        options.AppId = facebookAppId;
+        options.AppSecret = facebookAppSecret;
+        options.Fields.Add("name");
+        options.Fields.Add("email");
+    });
+}
+
+var gitHubClientId = builder.Configuration["Authentication:GitHub:ClientId"];
+var gitHubClientSecret = builder.Configuration["Authentication:GitHub:ClientSecret"];
+if (!string.IsNullOrWhiteSpace(gitHubClientId) && !string.IsNullOrWhiteSpace(gitHubClientSecret))
+{
+    authBuilder.AddGitHub(options =>
+    {
+        options.SignInScheme = "ExternalAuth";
+        options.ClientId = gitHubClientId;
+        options.ClientSecret = gitHubClientSecret;
+        options.Scope.Add("user:email");
+    });
+}
 
 builder.Services.AddAuthorization();
 

@@ -19,6 +19,7 @@ public static class DbInitializer
                     Username = "admin",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
                     FullName = "Quản Trị Viên",
+                    Email = "admin@studentmanagement.com",
                     Role = "Admin",
                     CreatedAt = DateTime.UtcNow
                 },
@@ -27,6 +28,7 @@ public static class DbInitializer
                     Username = "user",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("User@123"),
                     FullName = "Người Dùng Thường",
+                    Email = "user@studentmanagement.com",
                     Role = "User",
                     CreatedAt = DateTime.UtcNow
                 }

@@ -13,6 +13,8 @@ import { StudentsComponent } from './components/students/students.component';
 import { ClassesComponent } from './components/classes/classes.component';
 import { CoursesComponent } from './components/courses/courses.component';
 import { EnrollmentsComponent } from './components/enrollments/enrollments.component';
+import { ProfileComponent } from './components/profile/profile.component';
+import { AuthCallbackComponent } from './components/auth-callback/auth-callback.component';
 
 import { AuthInterceptor } from './core/auth.interceptor';
 
@@ -25,7 +27,9 @@ import { AuthInterceptor } from './core/auth.interceptor';
     StudentsComponent,
     ClassesComponent,
     CoursesComponent,
-    EnrollmentsComponent
+    EnrollmentsComponent,
+    ProfileComponent,
+    AuthCallbackComponent
   ],
   imports: [
     BrowserModule,

@@ -1,0 +1,37 @@
+<div class="container py-5 callback-container">
+  <div class="col-md-6 col-lg-5 text-center">
+    <div class="card shadow-sm p-4 p-md-5">
+      <!-- Loading state -->
+      <div *ngIf="isLoading">
+        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+          <span class="visually-hidden">Đang tải...</span>
+        </div>
+        <h4 class="fw-bold mb-2">Đang Xử Lý Đăng Nhập</h4>
+        <p class="text-muted small">Vui lòng chờ trong giây lát trong khi chúng tôi hoàn tất xác thực...</p>
+      </div>
+
+      <!-- Success state -->
+      <div *ngIf="isSuccess">
+        <div class="text-success display-4 mb-3">
+          <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <h4 class="fw-bold text-success mb-2">Đăng Nhập Thành Công!</h4>
+        <p class="text-muted small">Đang chuyển hướng về trang tổng quan Dashboard...</p>
+      </div>
+
+      <!-- Error state -->
+      <div *ngIf="errorMessage && !isLoading">
+        <div class="text-danger display-4 mb-3">
+          <i class="bi bi-x-circle-fill"></i>
+        </div>
+        <h4 class="fw-bold text-danger mb-2">Đăng Nhập Thất Bại</h4>
+        <div class="alert alert-danger py-2 small mb-4">
+          {{ errorMessage }}
+        </div>
+        <button class="btn btn-primary w-100" (click)="goToLogin()">
+          <i class="bi bi-arrow-left me-1"></i> Quay lại trang Đăng nhập
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

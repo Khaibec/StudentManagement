@@ -1,4 +1,4 @@
-﻿<div class="container py-5">
+<div class="container py-5">
   <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
       <div class="card shadow-sm p-4 p-md-5">
@@ -13,6 +13,42 @@
         <div *ngIf="errorMessage" class="alert alert-danger d-flex align-items-center mb-4" role="alert">
           <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2"></i>
           <div>{{ errorMessage }}</div>
+        </div>
+
+        <!-- Các nút Đăng nhập mạng xã hội (OAuth) -->
+        <div class="d-flex flex-column gap-2 mb-4">
+          <button
+            type="button"
+            class="btn btn-outline-danger w-100 py-2 d-flex align-items-center justify-content-center gap-2 fw-semibold"
+            (click)="loginOAuth('Google')"
+          >
+            <i class="bi bi-google fs-5"></i>
+            <span>Đăng nhập với Google</span>
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary w-100 py-2 d-flex align-items-center justify-content-center gap-2 fw-semibold"
+            (click)="loginOAuth('Facebook')"
+          >
+            <i class="bi bi-facebook fs-5"></i>
+            <span>Đăng nhập với Facebook</span>
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-dark w-100 py-2 d-flex align-items-center justify-content-center gap-2 fw-semibold"
+            (click)="loginOAuth('GitHub')"
+          >
+            <i class="bi bi-github fs-5"></i>
+            <span>Đăng nhập với GitHub</span>
+          </button>
+        </div>
+
+        <!-- Divider phân cách -->
+        <div class="position-relative text-center mb-4">
+          <hr class="text-muted" />
+          <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small">
+            hoặc đăng nhập bằng tài khoản
+          </span>
         </div>
 
         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
