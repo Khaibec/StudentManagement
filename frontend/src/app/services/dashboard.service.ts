@@ -1,14 +1,15 @@
-﻿import { Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ApiResponse } from '../models/auth.model';
 import { DashboardStatsDto } from '../models/dashboard.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DashboardService {
-  private readonly apiUrl = 'http://localhost:5000/api/dashboard/stats';
+  private readonly apiUrl = `${environment.apiUrl}/dashboard/stats`;
 
   constructor(private http: HttpClient) {}
 

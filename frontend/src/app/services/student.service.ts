@@ -10,12 +10,13 @@ import {
   StudentQueryParameters,
   UpdateStudentDto
 } from '../models/student.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class StudentService {
-  private readonly apiUrl = 'http://localhost:5000/api/students';
+  private readonly apiUrl = `${environment.apiUrl}/students`;
 
   constructor(private http: HttpClient) {}
 

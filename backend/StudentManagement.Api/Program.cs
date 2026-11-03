@@ -1,4 +1,5 @@
 using System.Text;
+using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -9,6 +10,17 @@ using StudentManagement.Api.Repositories.Implementations;
 using StudentManagement.Api.Services.Interfaces;
 using StudentManagement.Api.Services.Implementations;
 using StudentManagement.Api.Middleware;
+
+// Load biến môi trường từ file .env ở thư mục gốc project
+var envPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", ".env");
+if (File.Exists(envPath))
+{
+    Env.Load(envPath);
+}
+else
+{
+    Env.TraversePath().Load();
+}
 
 var builder = WebApplication.CreateBuilder(args);
 

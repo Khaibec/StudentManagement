@@ -1,14 +1,15 @@
-﻿import { Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ApiResponse } from '../models/auth.model';
 import { ClassDto, CreateClassDto, UpdateClassDto } from '../models/class.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ClassService {
-  private readonly apiUrl = 'http://localhost:5000/api/classes';
+  private readonly apiUrl = `${environment.apiUrl}/classes`;
 
   constructor(private http: HttpClient) {}
 
