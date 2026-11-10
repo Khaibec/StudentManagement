@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using StudentManagement.Api.DTOs.Common;
+using StudentManagement.Api.Exceptions;
 
 namespace StudentManagement.Api.Middleware;
 
@@ -44,7 +45,9 @@ public class ExceptionHandlingMiddleware
         // Cú pháp C# switch-expression giúp code ngắn gọn và dễ đọc
         var statusCode = exception switch
         {
+            StudentNotFoundException => (int)HttpStatusCode.NotFound,   // 404: Không tìm thấy học sinh
             KeyNotFoundException => (int)HttpStatusCode.NotFound,       // 404: Không tìm thấy dữ liệu
+            DuplicateStudentCodeException => (int)HttpStatusCode.BadRequest, // 400: Trùng mã sinh viên
             BadHttpRequestException => (int)HttpStatusCode.BadRequest,  // 400: Dữ liệu gửi lên sai định dạng
             UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized, // 401: Chưa đăng nhập / không có quyền
             ArgumentException => (int)HttpStatusCode.BadRequest,        // 400: Tham số truyền vào không hợp lệ

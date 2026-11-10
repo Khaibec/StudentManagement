@@ -1,6 +1,7 @@
-﻿using StudentManagement.Api.DTOs.Common;
+using StudentManagement.Api.DTOs.Common;
 using StudentManagement.Api.DTOs.Students;
 using StudentManagement.Api.Entities;
+using StudentManagement.Api.Exceptions;
 using StudentManagement.Api.Repositories.Interfaces;
 using StudentManagement.Api.Services.Interfaces;
 
@@ -9,12 +10,24 @@ namespace StudentManagement.Api.Services.Implementations;
 public class StudentService : IStudentService
 {
     private readonly IStudentRepository _studentRepository;
-    private readonly IClassRepository _classRepository;
+    private readonly IClassRepository? _classRepository;
+    private readonly IUnitOfWork? _unitOfWork;
 
-    public StudentService(IStudentRepository studentRepository, IClassRepository classRepository)
+    // Constructor chính hỗ trợ cả IStudentRepository, IUnitOfWork và IClassRepository
+    public StudentService(
+        IStudentRepository studentRepository,
+        IUnitOfWork unitOfWork,
+        IClassRepository? classRepository = null)
     {
         _studentRepository = studentRepository;
-        _classRepository = classRepository;
+        _unitOfWork = unitOfWork;
+        _classRepository = classRepository ?? unitOfWork?.Classes;
+    }
+
+    // Constructor phụ đảm bảo tương thích ngược
+    public StudentService(IStudentRepository studentRepository, IClassRepository classRepository)
+        : this(studentRepository, null!, classRepository)
+    {
     }
 
     public async Task<PagedResult<StudentDto>> GetStudentsAsync(StudentQueryParameters query)
@@ -50,7 +63,7 @@ public class StudentService : IStudentService
         var s = await _studentRepository.GetByIdWithDetailsAsync(id);
         if (s == null)
         {
-            throw new KeyNotFoundException($"Không tìm thấy học sinh với ID = {id}");
+            throw new StudentNotFoundException(id);
         }
 
         return new StudentDetailDto
@@ -81,14 +94,16 @@ public class StudentService : IStudentService
 
     public async Task<StudentDto> CreateStudentAsync(CreateStudentDto dto)
     {
+        // 1. Kiểm tra trùng mã sinh viên (trả về lỗi nghiệp vụ)
         if (await _studentRepository.ExistsByCodeAsync(dto.StudentCode.Trim()))
         {
-            throw new BadHttpRequestException($"Mã học sinh '{dto.StudentCode}' đã tồn tại trong hệ thống.");
+            throw new DuplicateStudentCodeException(dto.StudentCode);
         }
 
+        // 2. Kiểm tra lớp học nếu có chọn
         if (dto.ClassRoomId.HasValue && dto.ClassRoomId.Value > 0)
         {
-            var classRoom = await _classRepository.GetByIdAsync(dto.ClassRoomId.Value);
+            var classRoom = _classRepository != null ? await _classRepository.GetByIdAsync(dto.ClassRoomId.Value) : null;
             if (classRoom == null)
             {
                 throw new BadHttpRequestException($"Lớp học được chọn (ID = {dto.ClassRoomId}) không tồn tại.");
@@ -107,7 +122,13 @@ public class StudentService : IStudentService
             ClassRoomId = dto.ClassRoomId
         };
 
+        // 3. Gọi repository lưu học sinh và UnitOfWork hoàn tất giao dịch
         var created = await _studentRepository.CreateAsync(student);
+        if (_unitOfWork != null)
+        {
+            await _unitOfWork.CompleteAsync();
+        }
+
         var refreshed = await _studentRepository.GetByIdAsync(created.Id);
 
         return new StudentDto
@@ -128,15 +149,16 @@ public class StudentService : IStudentService
 
     public async Task<StudentDto> UpdateStudentAsync(int id, UpdateStudentDto dto)
     {
+        // Kiểm tra học sinh có tồn tại không trước khi cập nhật
         var student = await _studentRepository.GetByIdAsync(id);
         if (student == null)
         {
-            throw new KeyNotFoundException($"Không tìm thấy học sinh với ID = {id}");
+            throw new StudentNotFoundException(id);
         }
 
         if (dto.ClassRoomId.HasValue && dto.ClassRoomId.Value > 0)
         {
-            var classRoom = await _classRepository.GetByIdAsync(dto.ClassRoomId.Value);
+            var classRoom = _classRepository != null ? await _classRepository.GetByIdAsync(dto.ClassRoomId.Value) : null;
             if (classRoom == null)
             {
                 throw new BadHttpRequestException($"Lớp học được chọn (ID = {dto.ClassRoomId}) không tồn tại.");
@@ -152,6 +174,11 @@ public class StudentService : IStudentService
         student.ClassRoomId = dto.ClassRoomId;
 
         var updated = await _studentRepository.UpdateAsync(student);
+        if (_unitOfWork != null)
+        {
+            await _unitOfWork.CompleteAsync();
+        }
+
         var refreshed = await _studentRepository.GetByIdAsync(updated.Id);
 
         return new StudentDto
@@ -172,12 +199,19 @@ public class StudentService : IStudentService
 
     public async Task<bool> DeleteStudentAsync(int id)
     {
+        // Kiểm tra học sinh có tồn tại không trước khi xóa
         var existing = await _studentRepository.GetByIdAsync(id);
         if (existing == null)
         {
-            throw new KeyNotFoundException($"Không tìm thấy học sinh với ID = {id}");
+            throw new StudentNotFoundException(id);
         }
 
-        return await _studentRepository.DeleteAsync(id);
+        var deleted = await _studentRepository.DeleteAsync(id);
+        if (_unitOfWork != null)
+        {
+            await _unitOfWork.CompleteAsync();
+        }
+
+        return deleted;
     }
 }
