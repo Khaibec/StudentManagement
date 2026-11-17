@@ -81,6 +81,11 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+## User Uploads & Static Content
+**/wwwroot/uploads/**/*
+!**/wwwroot/uploads/**/
+!**/wwwroot/uploads/**/.gitkeep
+
 ## OS Generated Files
 .DS_Store
 .AppleDouble
