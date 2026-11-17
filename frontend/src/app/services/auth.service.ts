@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { ApiResponse, AuthResponse, LinkedAccountDto, LoginRequest, RegisterRequest, UserProfile } from '../models/auth.model';
+import { ApiResponse, AuthResponse, ChangePasswordRequest, LinkedAccountDto, LoginRequest, RegisterRequest, UpdateProfileRequest, UserProfile } from '../models/auth.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -91,6 +91,30 @@ export class AuthService {
   // Lấy thông tin tài khoản hiện tại
   getProfile(): Observable<ApiResponse<UserProfile>> {
     return this.http.get<ApiResponse<UserProfile>>(`${this.apiUrl}/me`);
+  }
+
+  // Cập nhật thông tin tài khoản (Họ tên, Email)
+  updateProfile(request: UpdateProfileRequest): Observable<ApiResponse<UserProfile>> {
+    return this.http.put<ApiResponse<UserProfile>>(`${this.apiUrl}/profile`, request).pipe(
+      tap((res) => {
+        if (res.success && res.data && this.currentUserValue) {
+          const updated = { ...this.currentUserValue, fullName: res.data.fullName };
+          this.saveAuth(updated);
+        }
+      })
+    );
+  }
+
+  // Tải lên ảnh đại diện cá nhân
+  uploadAvatar(file: File): Observable<ApiResponse<{ avatarUrl: string }>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<ApiResponse<{ avatarUrl: string }>>(`${this.apiUrl}/avatar`, formData);
+  }
+
+  // Thay đổi mật khẩu hoặc thiết lập mật khẩu lần đầu
+  changePassword(request: ChangePasswordRequest): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(`${this.apiUrl}/change-password`, request);
   }
 
   // Lưu thông tin đăng nhập nhận được từ OAuth callback

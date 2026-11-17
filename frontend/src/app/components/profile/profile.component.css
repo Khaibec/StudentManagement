@@ -5,3 +5,22 @@
 .badge-user {
   background-color: #0d6efd;
 }
+
+.avatar-upload-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.avatar-upload-btn:hover {
+  background-color: #e9ecef !important;
+  transform: scale(1.1);
+}
+
+.object-fit-cover {
+  object-fit: cover;
+}

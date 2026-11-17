@@ -83,6 +83,69 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// Cập nhật thông tin hồ sơ (Họ tên, Email)
+    /// </summary>
+    [Authorize]
+    [HttpPut("profile")]
+    public async Task<ActionResult<ApiResponse<UserProfileDto>>> UpdateProfile([FromBody] UpdateProfileDto dto)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue) return Unauthorized();
+
+        try
+        {
+            var updated = await _authService.UpdateProfileAsync(userId.Value, dto);
+            return Ok(ApiResponse<UserProfileDto>.Ok(updated, "Cập nhật thông tin hồ sơ thành công!"));
+        }
+        catch (BadHttpRequestException ex)
+        {
+            return BadRequest(ApiResponse<UserProfileDto>.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Tải lên ảnh đại diện cá nhân
+    /// </summary>
+    [Authorize]
+    [HttpPost("avatar")]
+    public async Task<ActionResult<ApiResponse<object>>> UploadAvatar(IFormFile file)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue) return Unauthorized();
+
+        try
+        {
+            var avatarUrl = await _authService.UpdateAvatarAsync(userId.Value, file);
+            return Ok(ApiResponse<object>.Ok(new { avatarUrl }, "Cập nhật ảnh đại diện thành công!"));
+        }
+        catch (BadHttpRequestException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Thay đổi mật khẩu hoặc thiết lập mật khẩu lần đầu
+    /// </summary>
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<ActionResult<ApiResponse<bool>>> ChangePassword([FromBody] ChangePasswordDto dto)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue) return Unauthorized();
+
+        try
+        {
+            var result = await _authService.ChangePasswordAsync(userId.Value, dto);
+            return Ok(ApiResponse<bool>.Ok(result, "Thay đổi mật khẩu thành công!"));
+        }
+        catch (BadHttpRequestException ex)
+        {
+            return BadRequest(ApiResponse<bool>.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
     /// Bắt đầu luồng đăng nhập với OAuth Provider (Google, Facebook, GitHub)
     /// </summary>
     [HttpGet("external-login")]

@@ -7,6 +7,9 @@ public interface IAuthService
     Task<AuthResponseDto> LoginAsync(LoginRequestDto request);
     Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request);
     Task<UserProfileDto> GetUserProfileAsync(int userId);
+    Task<UserProfileDto> UpdateProfileAsync(int userId, UpdateProfileDto dto);
+    Task<string> UpdateAvatarAsync(int userId, IFormFile file);
+    Task<bool> ChangePasswordAsync(int userId, ChangePasswordDto dto);
 
     // OAuth External Auth Methods
     Task<AuthResponseDto> ProcessExternalLoginAsync(string provider, string providerKey, string? email, string? displayName);

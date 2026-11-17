@@ -9,11 +9,16 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly ITokenService _tokenService;
+    private readonly IWebHostEnvironment _environment;
 
-    public AuthService(IUserRepository userRepository, ITokenService tokenService)
+    public AuthService(
+        IUserRepository userRepository,
+        ITokenService tokenService,
+        IWebHostEnvironment environment)
     {
         _userRepository = userRepository;
         _tokenService = tokenService;
+        _environment = environment;
     }
 
     public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
@@ -93,10 +98,134 @@ public class AuthService : IAuthService
             Username = user.Username,
             FullName = user.FullName,
             Email = user.Email,
+            AvatarUrl = user.AvatarUrl,
             Role = user.Role,
             HasPassword = !string.IsNullOrWhiteSpace(user.PasswordHash),
             CreatedAt = user.CreatedAt
         };
+    }
+
+    public async Task<UserProfileDto> UpdateProfileAsync(int userId, UpdateProfileDto dto)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+            throw new KeyNotFoundException("Không tìm thấy thông tin người dùng.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.Email) && !string.Equals(user.Email, dto.Email, StringComparison.OrdinalIgnoreCase))
+        {
+            var existingByEmail = await _userRepository.GetByEmailAsync(dto.Email.Trim());
+            if (existingByEmail != null && existingByEmail.Id != userId)
+            {
+                throw new BadHttpRequestException($"Email '{dto.Email}' đã được sử dụng bởi một tài khoản khác.");
+            }
+        }
+
+        user.FullName = dto.FullName.Trim();
+        user.Email = dto.Email?.Trim();
+
+        await _userRepository.UpdateAsync(user);
+
+        return new UserProfileDto
+        {
+            Id = user.Id,
+            Username = user.Username,
+            FullName = user.FullName,
+            Email = user.Email,
+            AvatarUrl = user.AvatarUrl,
+            Role = user.Role,
+            HasPassword = !string.IsNullOrWhiteSpace(user.PasswordHash),
+            CreatedAt = user.CreatedAt
+        };
+    }
+
+    public async Task<string> UpdateAvatarAsync(int userId, IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            throw new BadHttpRequestException("Vui lòng chọn một tệp hình ảnh hợp lệ.");
+        }
+
+        if (file.Length > 2 * 1024 * 1024)
+        {
+            throw new BadHttpRequestException("Dung lượng ảnh đại diện tối đa là 2MB.");
+        }
+
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowedExtensions.Contains(extension))
+        {
+            throw new BadHttpRequestException("Chỉ chấp nhận các định dạng ảnh: .jpg, .jpeg, .png, .webp.");
+        }
+
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+            throw new KeyNotFoundException("Không tìm thấy thông tin người dùng.");
+        }
+
+        var webRoot = _environment.WebRootPath ?? Path.Combine(_environment.ContentRootPath, "wwwroot");
+        var avatarsFolder = Path.Combine(webRoot, "uploads", "avatars");
+        if (!Directory.Exists(avatarsFolder))
+        {
+            Directory.CreateDirectory(avatarsFolder);
+        }
+
+        // Xóa ảnh đại diện cũ nếu là file cục bộ
+        if (!string.IsNullOrWhiteSpace(user.AvatarUrl) && user.AvatarUrl.StartsWith("/uploads/avatars/"))
+        {
+            var oldFileName = Path.GetFileName(user.AvatarUrl);
+            var oldFilePath = Path.Combine(avatarsFolder, oldFileName);
+            if (File.Exists(oldFilePath))
+            {
+                try { File.Delete(oldFilePath); } catch { /* Bỏ qua nếu đang bị lock */ }
+            }
+        }
+
+        var newFileName = $"{userId}_{Guid.NewGuid():N}{extension}";
+        var newFilePath = Path.Combine(avatarsFolder, newFileName);
+
+        using (var stream = new FileStream(newFilePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var avatarRelativeUrl = $"/uploads/avatars/{newFileName}";
+        user.AvatarUrl = avatarRelativeUrl;
+        await _userRepository.UpdateAsync(user);
+
+        return avatarRelativeUrl;
+    }
+
+    public async Task<bool> ChangePasswordAsync(int userId, ChangePasswordDto dto)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+            throw new KeyNotFoundException("Không tìm thấy thông tin người dùng.");
+        }
+
+        bool hasExistingPassword = !string.IsNullOrWhiteSpace(user.PasswordHash);
+
+        if (hasExistingPassword)
+        {
+            if (string.IsNullOrWhiteSpace(dto.CurrentPassword))
+            {
+                throw new BadHttpRequestException("Vui lòng nhập mật khẩu hiện tại.");
+            }
+
+            bool isCurrentValid = BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.PasswordHash);
+            if (!isCurrentValid)
+            {
+                throw new BadHttpRequestException("Mật khẩu hiện tại không chính xác.");
+            }
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+        await _userRepository.UpdateAsync(user);
+
+        return true;
     }
 
     public async Task<AuthResponseDto> ProcessExternalLoginAsync(string provider, string providerKey, string? email, string? displayName)

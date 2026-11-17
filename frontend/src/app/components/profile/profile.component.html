@@ -5,11 +5,11 @@
       <h3 class="fw-bold mb-1">
         <i class="bi bi-person-circle me-2 text-primary"></i>Hồ Sơ & Liên Kết Tài Khoản
       </h3>
-      <p class="text-muted mb-0 small">Quản lý thông tin cá nhân và các tài khoản mạng xã hội bên thứ ba đã kết nối</p>
+      <p class="text-muted mb-0 small">Quản lý thông tin cá nhân, ảnh đại diện, mật khẩu và liên kết tài khoản mạng xã hội</p>
     </div>
   </div>
 
-  <!-- Thông báo thành công / lỗi -->
+  <!-- Thông báo thành công / lỗi chung -->
   <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
     <i class="bi bi-check-circle-fill me-2"></i>{{ successMessage }}
     <button type="button" class="btn-close" (click)="successMessage = ''"></button>
@@ -24,10 +24,18 @@
     <!-- Cột 1: Thông tin tài khoản -->
     <div class="col-lg-5">
       <div class="card shadow-sm h-100 border-0">
-        <div class="card-header bg-white py-3 border-bottom">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
           <h5 class="fw-bold mb-0 text-dark">
             <i class="bi bi-person-vcard me-2 text-primary"></i>Thông Tin Cá Nhân
           </h5>
+          <button
+            *ngIf="!isLoadingProfile && profile && !isEditingProfile"
+            class="btn btn-outline-primary btn-sm"
+            (click)="startEditProfile()"
+            title="Chỉnh sửa họ tên, email"
+          >
+            <i class="bi bi-pencil me-1"></i>Sửa
+          </button>
         </div>
         <div class="card-body p-4">
           <div *ngIf="isLoadingProfile" class="text-center py-4">
@@ -36,10 +44,43 @@
           </div>
 
           <div *ngIf="!isLoadingProfile && profile">
+            <!-- Khu vực Avatar và Họ tên -->
             <div class="d-flex align-items-center gap-3 mb-4">
-              <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 64px; height: 64px; font-size: 1.75rem;">
-                <i class="bi bi-person"></i>
+              <!-- Avatar Container với nút đổi ảnh -->
+              <div class="position-relative d-inline-block">
+                <img
+                  *ngIf="profile.avatarUrl; else noAvatar"
+                  [src]="getAvatarUrl(profile.avatarUrl)"
+                  alt="Avatar"
+                  class="rounded-circle object-fit-cover shadow-sm border border-2 border-primary"
+                  style="width: 76px; height: 76px;"
+                />
+                <ng-template #noAvatar>
+                  <div
+                    class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm"
+                    style="width: 76px; height: 76px; font-size: 2rem;"
+                  >
+                    <i class="bi bi-person"></i>
+                  </div>
+                </ng-template>
+
+                <!-- Nút tải ảnh lên dạng Camera badge -->
+                <label
+                  class="position-absolute bottom-0 end-0 bg-white rounded-circle shadow-sm border border-secondary border-opacity-25 avatar-upload-btn text-primary"
+                  title="Thay đổi ảnh đại diện (Tối đa 2MB)"
+                >
+                  <i *ngIf="!isUploadingAvatar" class="bi bi-camera-fill small"></i>
+                  <span *ngIf="isUploadingAvatar" class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                  <input
+                    type="file"
+                    hidden
+                    (change)="onFileSelected($event)"
+                    accept="image/png, image/jpeg, image/webp"
+                    [disabled]="isUploadingAvatar"
+                  />
+                </label>
               </div>
+
               <div>
                 <h5 class="fw-bold mb-1">{{ profile.fullName }}</h5>
                 <span class="badge" [ngClass]="profile.role === 'Admin' ? 'bg-danger' : 'bg-primary'">
@@ -48,31 +89,91 @@
               </div>
             </div>
 
-            <ul class="list-group list-group-flush small">
-              <li class="list-group-item d-flex justify-content-between px-0 py-2">
-                <span class="text-muted">Tên đăng nhập:</span>
-                <span class="fw-semibold">{{ profile.username }}</span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between px-0 py-2">
-                <span class="text-muted">Email:</span>
-                <span class="fw-semibold">{{ profile.email || 'Chưa cập nhật' }}</span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between px-0 py-2">
-                <span class="text-muted">Mật khẩu đăng nhập:</span>
-                <span>
-                  <span *ngIf="profile.hasPassword" class="badge bg-success-subtle text-success border border-success-subtle">
-                    <i class="bi bi-check-circle me-1"></i>Đã thiết lập
+            <!-- CHẾ ĐỘ XEM THÔNG TIN -->
+            <div *ngIf="!isEditingProfile">
+              <ul class="list-group list-group-flush small mb-3">
+                <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                  <span class="text-muted">Tên đăng nhập:</span>
+                  <span class="fw-semibold">{{ profile.username }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                  <span class="text-muted">Họ và tên:</span>
+                  <span class="fw-semibold">{{ profile.fullName }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                  <span class="text-muted">Email:</span>
+                  <span class="fw-semibold">{{ profile.email || 'Chưa cập nhật' }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                  <span class="text-muted">Mật khẩu:</span>
+                  <span>
+                    <span *ngIf="profile.hasPassword" class="badge bg-success-subtle text-success border border-success-subtle">
+                      <i class="bi bi-check-circle me-1"></i>Đã thiết lập
+                    </span>
+                    <span *ngIf="!profile.hasPassword" class="badge bg-warning-subtle text-dark border border-warning-subtle">
+                      <i class="bi bi-exclamation-triangle me-1"></i>Chưa thiết lập
+                    </span>
                   </span>
-                  <span *ngIf="!profile.hasPassword" class="badge bg-warning-subtle text-dark border border-warning-subtle">
-                    <i class="bi bi-exclamation-triangle me-1"></i>Đăng nhập qua OAuth (Chưa có mật khẩu)
-                  </span>
-                </span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between px-0 py-2">
-                <span class="text-muted">Ngày tạo tài khoản:</span>
-                <span class="fw-semibold">{{ profile.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
-              </li>
-            </ul>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                  <span class="text-muted">Ngày tạo:</span>
+                  <span class="fw-semibold">{{ profile.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                </li>
+              </ul>
+
+              <!-- Nút đổi mật khẩu / thiết lập mật khẩu -->
+              <div class="d-grid gap-2 pt-2">
+                <button class="btn btn-outline-secondary btn-sm" (click)="openPasswordModal()">
+                  <i class="bi me-1" [ngClass]="profile.hasPassword ? 'bi-key-fill text-warning' : 'bi-shield-plus text-primary'"></i>
+                  {{ profile.hasPassword ? 'Đổi mật khẩu' : 'Thiết lập mật khẩu tài khoản' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- CHẾ ĐỘ CHỈNH SỬA THÔNG TIN (INLINE FORM) -->
+            <div *ngIf="isEditingProfile" class="mt-2">
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Họ và tên <span class="text-danger">*</span></label>
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  [(ngModel)]="editProfileData.fullName"
+                  placeholder="Nhập họ và tên đầy đủ"
+                />
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Email</label>
+                <input
+                  type="email"
+                  class="form-control form-control-sm"
+                  [(ngModel)]="editProfileData.email"
+                  placeholder="name@example.com"
+                />
+                <div class="form-text small">Email dùng để nhận thông báo hoặc liên kết tài khoản.</div>
+              </div>
+
+              <div class="d-flex justify-content-end gap-2 pt-2">
+                <button
+                  type="button"
+                  class="btn btn-light btn-sm"
+                  (click)="cancelEditProfile()"
+                  [disabled]="isSavingProfile"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  (click)="saveProfile()"
+                  [disabled]="isSavingProfile"
+                >
+                  <span *ngIf="isSavingProfile" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                  Lưu thay đổi
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -89,7 +190,7 @@
         </div>
         <div class="card-body p-4">
           <p class="text-muted small mb-4">
-            Bạn có thể kết nối tài khoản Google, Facebook, hoặc GitHub.
+            Bạn có thể kết nối tài khoản Google, Facebook, hoặc GitHub để đăng nhập nhanh chóng và bảo mật.
           </p>
 
           <div *ngIf="isLoadingAccounts" class="text-center py-4">
@@ -152,6 +253,72 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Đổi Mật Khẩu / Thiết Lập Mật Khẩu -->
+<div *ngIf="showPasswordModal" class="modal-backdrop fade show"></div>
+<div *ngIf="showPasswordModal" class="modal fade show d-block" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold text-dark">
+          <i class="bi me-2 text-primary" [ngClass]="profile?.hasPassword ? 'bi-key-fill' : 'bi-shield-plus'"></i>
+          {{ profile?.hasPassword ? 'Đổi Mật Khẩu' : 'Thiết Lập Mật Khẩu Đăng Nhập' }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closePasswordModal()" [disabled]="isChangingPassword"></button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="passwordModalError" class="alert alert-danger py-2 small mb-3">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ passwordModalError }}
+        </div>
+
+        <div *ngIf="!profile?.hasPassword" class="alert alert-info py-2 small mb-3">
+          <i class="bi bi-info-circle me-1"></i>
+          Tài khoản này được đăng nhập lần đầu qua OAuth (mạng xã hội). Hãy đặt mật khẩu để có thể đăng nhập bằng tên người dùng và mật khẩu.
+        </div>
+
+        <!-- Mật khẩu hiện tại (chỉ yêu cầu nếu user đã có mật khẩu) -->
+        <div *ngIf="profile?.hasPassword" class="mb-3">
+          <label class="form-label small fw-semibold">Mật khẩu hiện tại <span class="text-danger">*</span></label>
+          <input
+            type="password"
+            class="form-control"
+            [(ngModel)]="passwordData.currentPassword"
+            placeholder="Nhập mật khẩu đang dùng"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Mật khẩu mới <span class="text-danger">*</span></label>
+          <input
+            type="password"
+            class="form-control"
+            [(ngModel)]="passwordData.newPassword"
+            placeholder="Tối thiểu 6 ký tự"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Xác nhận mật khẩu mới <span class="text-danger">*</span></label>
+          <input
+            type="password"
+            class="form-control"
+            [(ngModel)]="passwordData.confirmPassword"
+            placeholder="Nhập lại mật khẩu mới"
+          />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closePasswordModal()" [disabled]="isChangingPassword">
+          Hủy
+        </button>
+        <button type="button" class="btn btn-primary" (click)="savePassword()" [disabled]="isChangingPassword">
+          <span *ngIf="isChangingPassword" class="spinner-border spinner-border-sm me-1" role="status"></span>
+          {{ profile?.hasPassword ? 'Đổi Mật Khẩu' : 'Thiết Lập Mật Khẩu' }}
+        </button>
       </div>
     </div>
   </div>

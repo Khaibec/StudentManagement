@@ -28,9 +28,21 @@ export interface UserProfile {
   username: string;
   fullName: string;
   email?: string;
+  avatarUrl?: string;
   role: string;
   hasPassword: boolean;
   createdAt: string;
+}
+
+export interface UpdateProfileRequest {
+  fullName: string;
+  email?: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword?: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 export interface LinkedAccountDto {

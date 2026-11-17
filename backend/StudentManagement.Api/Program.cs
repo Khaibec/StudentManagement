@@ -213,6 +213,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 
 // UseCors phải đặt trước UseAuthentication và UseAuthorization để xử lý các preflight OPTIONS request của trình duyệt
 app.UseCors("AllowAngularApp");
